@@ -216,7 +216,7 @@
   "lokiURL": "",
   "lokiServiceName": "",
   "voiceChannelPurge": true,
-  "forumChannelAutoWarnFallbackChannel": 150662382874525696,
+  "forumChannelAutoWarnFallbackChannel": 1379528470354198551,
   "rulesAllowedPublicChannels": [1379528470354198551],
   "mentionTrackExcludedChannels": [],
   "pingBotOwnersOnBadErrors": false,
