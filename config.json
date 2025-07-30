@@ -5,75 +5,21 @@
       "c!"
     ]
   },
-  "trialModRole": 352519899048050688,
-  "modRole": 150878439220576256,
-  "adminRole": 286639672606720000,
-  "mutedRole": 426386061220904960,
-  "serverID": 150662382874525696,
-  "homeChannel": 793285213823172628,
-  "techSupportChannel": 150909451270881280,
-  "communityTechSupportRoleID": 787033266225938472,
-  "modmailUserId": 459322015044730903,
+  "trialModRole": 1387447694879883324,
+  "modRole": 1387447694879883324,
+  "adminRole": 1384516462017777734,
+  "mutedRole": 1392240743527219374,
+  "serverID": 1379528469859532931,
+  "homeChannel": 1392240880781361253,
+  "techSupportChannel": 1379528470354198551,
+  "communityTechSupportRoleID": 0,
+  "modmailUserId": 0,
   "supportRatelimitMinutes": 15,
-  "announcementRoles": {
-    "canary": 434426594271166474,
-    "dev": 1082364328474329179,
-    "beta": 643712828217360394,
-    "rp": 288729239921098752,
-    "rp10": 910319453491839069,
-    "patch": 445773142233710594
-  },
-  "announcementRolesFriendlyNames": {
-    "canary": "Windows 11 Insiders (Canary)",
-    "dev": "Windows 11 Insiders (Dev)",
-    "beta": "Windows 11 Insiders (Beta)",
-    "rp": "Windows 11 Insiders (Release Preview)",
-    "rp10": "Windows 10 Insiders (Release Preview)",
-    "patch": "Patch Tuesday"
-  },
-  "appealLink": "https://appeal.msft.chat",
-  "inviteExclusion": [
-    "microsoft",
-    "xbox",
-    "FjJfTZdtXg",
-    "cMxFErsEDB",
-    "apple",
-    "directx",
-    "winadmins",
-    "minecraft",
-    "intel",
-    "csharp",
-    "go-copilot"
-  ],
-  "inviteIDExclusion": [
-    150662382874525696,
-    471722331820130324,
-    428691939861463042,
-    423075122610700288,
-    642503976851603456,
-    585165441790509094,
-    533026667522818060,
-    281889582855880705,
-    357444624178216961,
-    302094807046684672,
-    212316585333882880,
-    640872479715360778,
-    784542837596225567,
-    577548441878790146,
-    671383133505191946,
-    646017020412035082,
-    162891400684371968,
-    689146493919428623,
-    133980319010258944,
-    568863120609640463,
-    675491639804035089,
-    114211522384756737,
-    834949385535750214,
-    554824368740630529,
-    924393747112919090,
-    143867839282020352,
-    1266463141642895422
-  ],
+  "announcementRoles": {},
+  "announcementRolesFriendlyNames": {},
+  "appealLink": "https://tailscale.com/contact/support",
+  "inviteExclusion": ["c84AZQhmpx"],
+  "inviteIDExclusion": [896711691637780480],
   "warningDaysThreshold": 30,
   "autoMuteThresholds": {
     "2": 3,
@@ -92,16 +38,16 @@
   "massMentionBanThreshold": 20,
   "inviteTierRequirement": 3,
   "tierRoles": [
-    191569917542268928,
-    200719503435235329,
-    221998243079258112,
-    221999663811657730,
-    284782848844627968,
-    398209263962554368,
-    812031728814129202,
-    812031784933261342,
-    812031849517285406,
-    812031871834783814
+    1387447465740865567,
+    1387447465740865567,
+    1387447465740865567,
+    1387447465740865567,
+    1387447465740865567,
+    1387447465740865567,
+    1387447465740865567,
+    1387447465740865567,
+    1387447465740865567,
+    1387447465740865567
   ],
   "emoji": {
     "noPermissions": "<:CliptokShieldUAC:1263632750985089045>",
@@ -130,7 +76,7 @@
     "clockTime": "<:CliptokClock:1263632634576244796>",
     "windows11": "<:CliptokWindows11:1263633816170401842>",
     "on": "<:CliptokOn:1263632715119333416>",
-    "off": "<:CliptokOff:1263632708752511017>​",
+    "off": "<:CliptokOff:1263632708752511017>",
     "insider": "<:WindowsInsider:1263632527436812502>",
     "windows10": "<:Windows10:1263632887043850290>"
   },
@@ -150,17 +96,6 @@
       "reason": "Sent malicious URL(s)"
     },
     {
-      "name": "Private/rudeWords.txt",
-      "wholeWord": true,
-      "reason": "Use of restricted word(s)"
-    },
-    {
-      "name": "Private/phishing.txt",
-      "wholeWord": false,
-      "url": true,
-      "reason": "Sending phishing URL(s)"
-    },
-    {
       "name": "malware.txt",
       "wholeWord": false,
       "url": false,
@@ -171,78 +106,34 @@
       "wholeWord": false,
       "url": false,
       "reason": "Sending text that takes advantage of an exploit in Discord clients"
-    },
-    {
-      "name": "Private/passive.txt",
-      "wholeWord": true,
-      "url": false,
-      "reason": "",
-      "passive": true,
-      "channelId": 963070640292782160
     }
   ],
   "gitListDirectory": "Private",
-  "everyoneExcludedChannels": [
-    316600283503394817,
-    726511089461755974
-  ],
+  "everyoneExcludedChannels": [1388174464428019904],
   "massEmojiThreshold": 6,
-  "unrestrictedEmojiChannels": [
-    150909911952392193,
-    740272437719072808,
-    240528256292356096,
-    812412803104768111,
-    939441229157007380,
-    947775206141870111,
-    955866568531775608
-  ],
+  "unrestrictedEmojiChannels": [],
   "lockdownEnabledChannels": [
-    150662382874525696,
-    187649467611086849,
-    150909911952392193,
-    740272437719072808,
-    150909451270881280,
-    616842528712425472,
-    603629077361983518,
-    574650177034387467,
-    470642923483168768,
-    470642923483168768,
-    338055831838916609,
-    786719370990321735,
-    408371098653163521,
-    173743310878277634,
-    341168934386401281,
-    438383036422422529,
-    198170523954446336,
-    522353051353350144,
-    217391455478480896,
-    407431028022575116,
-    428472487941111809,
-    667438432615792653,
-    812191602440798259,
-    857320003693969418,
-    894699119195619379,
-    960568397475749888,
-    717423310308376596,
-    468197326750744596,
-    984622268904779826
+    1379528470354198551,
+    1388169880255332412,
+    1388174831345995888,
+    1388174223629095052,
+    1387482534815727729,
+    1388174325663662251,
+    1388174241609814137,
+    1388174260006293618,
+    1388174285671108618,
+    1392097619228229684,
+    1388174355300618433,
+    1388174303786303551,
+    1388174344097628252
   ],
-  "heartosoftId": 413429915187281940,
+  "heartosoftId": 0,
   "autoDehoistCharacters": " !\"#$%&'()*+,-./:;<=>?@[\\]^_`'",
   "secondaryAutoDehoistCharacters": "0123456789",
-  "hastebinEndpoint": "https://paste.erisa.ts.net",
-  "hastebinType": "tclip",
-  "userRoles": {
-    "insiderCanary": 434426594271166474,
-    "insiderDev": 1082364328474329179,
-    "insiderBeta": 643712828217360394,
-    "insiderRP": 288729239921098752,
-    "insider10RP": 910319453491839069,
-    "insiderChat": 1323636793668800547,
-    "patchTuesday": 445773142233710594,
-    "giveaways": 1169336992455200820
-  },
-  "modmailCategory": 536572162450915340,
+  "hastebinEndpoint": "",
+  "hastebinType": "",
+  "userRoles": {},
+  "modmailCategory": 0,
   "lineLimit": 30,
   "increasedLineLimit": 1000,
   "lineLimitTier": 3,
@@ -254,120 +145,90 @@
     438383036422422529,
     1006577277313744996
   ],
-  "giveawaysChannel": 280002642602622986,
-  "giveawayBot": 517176766226235404,
-  "giveawayTriggerMessage": "<@&1169336992455200820>",
-  "githubWorkflow": {
-    "repo": "Erisa/Cliptok",
-    "ref": "main",
-    "workflowId": "append-lists-txt.yml"
-  },
-  "githubWorkflowPrivate": {
-    "repo": "Microsoft-community/lists",
-    "ref": "main",
-    "workflowId": "append-lists-txt.yml"
-  },
+  "giveawaysChannel": 0,
+  "giveawayBot": 0,
+  "giveawayTriggerMessage": "",
+  "githubWorkflow": null,
+  "githubWorkflowPrivate": null,
   "everyoneFilter": true,
   "logChannels": {
     "mod": {
-      "channelId": 584908576980729876
+      "channelId": 1392243940660346892
     },
     "investigations": {
-      "channelId": 745276933767430255
+      "channelId": 1392244120545792182
     },
     "errors": {
-      "webhookEnvVar": "CLIPTALK_WEBHOOK",
-      "channelId": 968463420586336286
+      "channelId": 1392244072500170995
     },
     "support": {
-      "channelId": 843181924687806484
+      "channelId": 1379528470354198551
     },
     "dms": {
-      "webhookEnvVar": "CLIPTALK_WEBHOOK",
-      "channelId": 963600228286607391
+      "channelId": 1392244325642928193
     },
     "secret": {
-      "channelId": 974161605938012160
+      "channelId": 1392244072500170995
     },
     "users": {
-      "channelId": 870053642500182046
+      "channelId": 1392244013251301426
+    },
+    "username": {
+      "channelId": 1392244072500170995
     },
     "messages": {
-      "channelId": 1002631072179294218
+      "channelId": 1392243991428468886
     },
     "mentions": {
-      "channelId": 1018252827254063224
+      "channelId": 1392244325642928193
     },
     "nicknames": {
-      "channelId": 1280688061528674314
+      "channelId": 1392244072500170995
     },
     "reactions": {
-      "webhookEnvVar": "REACTION_LOG_WEBHOOK",
-      "channelId": 1311084236702482542
+      "channelId": 1392244072500170995
     }
   },
   "botOwners": [
     228574821590499329,
-    455432936339144705
+    1340006081732022272,
+    1392166220739907654
   ],
-  "ignoredVoiceChannels": [
-    922260379470548992
-  ],
+  "ignoredVoiceChannels": [],
   "enableTextInVoice": true,
-  "tqsRoleId": 513434929280057354,
-  "supportForumId": 1006577277313744996,
-  "everyoneExcludedRoles": [
-    707996864317751321
-  ],
-  "feedbackHubForum": 1033193525975715911,
-  "insiderThreads": {
-    "canary": 1082394217168523315,
-    "dev": 1358210048777654352,
-    "beta": 1358210090880209066,
-    "rp": 1358210147683401819,
-    "rp10": 1358210188011638844
-  },
-  "insiderAnnouncementChannel": 1043898319883219004,
-  "insiderInfoChannel": 1279201622651572317,
-  "insidersChannel": 187649467611086849,
+  "tqsRoleId": 0,
+  "supportForumIntroThreadId": 0,
+  "supportForumId": 1388169880255332412,
+  "everyoneExcludedRoles": [1384516462017777734],
+  "feedbackHubForum": 0,
+  "forumIntroPosts": [],
+  "insiderThreads": {},
+  "insiderAnnouncementChannel": 0,
+  "insiderInfoChannel": 0,
+  "insidersChannel": 0,
   "dmAutoresponseTimeLimit": 6,
   "autoDeleteEmptyThreads": true,
-  "tqsMutedRole": 752821045408563230,
+  "tqsMutedRole": 0,
   "tqsMuteDurationHours": 2,
   "autoWarnMsgAutoDeleteDays": 3,
   "compromisedAccountBanMsgAutoDeleteDays": 3,
   "logLevel": "Debug",
-  "lokiURL": "http://100.79.19.82:3100",
-  "lokiServiceName": "cliptok",
+  "lokiURL": "",
+  "lokiServiceName": "",
   "voiceChannelPurge": true,
   "forumChannelAutoWarnFallbackChannel": 150662382874525696,
-  "rulesAllowedPublicChannels": [
-    150909451270881280,
-    1006577277313744996,
-    153165424358457345,
-    740272437719072808,
-    536572162450915340,
-    355973419961155584
-  ],
-  "mentionTrackExcludedChannels": [
-    883400305679663156,
-    593381041629298688,
-    450181490345508884
-  ],
-  "pingBotOwnersOnBadErrors": true,
+  "rulesAllowedPublicChannels": [1379528470354198551],
+  "mentionTrackExcludedChannels": [],
+  "pingBotOwnersOnBadErrors": false,
   "githubWorkflowSucessString": "[lists:main] 1 new commit",
-  "botCommandsChannel": 740272437719072808,
+  "botCommandsChannel": 1388174872647045252,
   "duplicateMessageThreshold": 4,
   "duplicateMessageSeconds": 60,
   "insiderThreadKeepLastPins": 3,
   "warningLogReactionTimeMinutes": 5,
   "enablePersistentDb": true,
-  "disableMicrosoftCommands": false,
-  "noFun": false,
-  "messageCachePruneDays": 30,
-  "messageLogExcludedChannels": [
-    883400305679663156,
-    593381041629298688,
-    450181490345508884
-  ]
+  "disableMicrosoftCommands": true,
+  "noFun": true,
+  "messageCachePruneDays": 7,
+  "messageLogExcludedChannels": [1392240880781361253]
 }
