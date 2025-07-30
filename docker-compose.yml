@@ -1,6 +1,6 @@
 services:
   bot:
-    image: ghcr.io/erisa/cliptok
+    build: .
     depends_on:
       - redis
       # comment out this if you don't use db support
@@ -8,17 +8,17 @@ services:
     env_file:
       - .env
     restart: on-failure
-    volumes:
-      - type: bind
-        source: ./Lists/Private
-        target: /app/Lists/Private
+    # volumes:
+      # - type: bind
+      #   source: ./Lists/Private
+      #   target: /app/Lists/Private
       # Comment out the following (And I guess the above?) if you won't use SSH to pull Lists/Private
-      - type: bind
-        source: ${HOME}/.ssh/known_hosts
-        target: /root/.ssh/known_hosts
-      - type: bind
-        source: ./ssh_key
-        target: /root/.ssh/id_ed25519
+      # - type: bind
+      #   source: ${HOME}/.ssh/known_hosts
+      #   target: /root/.ssh/known_hosts
+      # - type: bind
+      #   source: ./ssh_key
+      #   target: /root/.ssh/id_ed25519
       # Uncomment the below lines to use your own config file.
       #- type: bind
       #  source: ./config.dev.json
@@ -28,7 +28,7 @@ services:
       #  I don't advise changing this unless you have a strange setup
       - REDIS_DOCKER_OVERRIDE=true
     # uncomment this for bespoke setups
-    network_mode: service:tailscale
+    # network_mode: service:tailscale
   redis:
     image: mirror.gcr.io/redis:7.2-alpine
     restart: always
@@ -49,37 +49,37 @@ services:
       - ./pgdata:/var/lib/postgresql/data
 
 # You may want to comment out everything below if you're not Erisa.
-  redis-exposer:
-    image: ghcr.io/erisa/redis-exposer
-    restart: always
-    env_file:
-     - .exposer.env
-  cloudflared:
-    image: ghcr.io/erisa/cloudflared
-    restart: always
-    command: tunnel --no-autoupdate run
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}
-  watchtower:
-    image: ghcr.io/containrrr/watchtower
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 30 --label-enable
-    restart: always
-  tailscale:
-    image: ghcr.io/tailscale/tailscale:latest
-    volumes:
-      - ./data/ts-state:/var/lib/tailscale
-    devices:
-      - /dev/net/tun:/dev/net/tun
-    environment:
-      - TS_AUTHKEY=${TS_AUTHKEY}
-      - TS_STATE_DIR=/var/lib/tailscale
-      - TS_USERSPACE=false
-      - TS_EXTRA_ARGS=--hostname=cliptok --accept-dns=false --accept-routes=false # i'm not having my tailnet misconfigurations break cliptok
-    cap_add:
-      - net_admin
-      - sys_module
-    restart: always
-    extra_hosts:
-      - "paste.erisa.ts.net:100.104.163.12"
+  # redis-exposer:
+  #   image: ghcr.io/erisa/redis-exposer
+  #   restart: always
+  #   env_file:
+  #    - .exposer.env
+  # cloudflared:
+  #   image: ghcr.io/erisa/cloudflared
+  #   restart: always
+  #   command: tunnel --no-autoupdate run
+  #   environment:
+  #     - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}
+  # watchtower:
+  #   image: ghcr.io/containrrr/watchtower
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   command: --interval 30 --label-enable
+  #   restart: always
+  # tailscale:
+  #   image: ghcr.io/tailscale/tailscale:latest
+  #   volumes:
+  #     - ./data/ts-state:/var/lib/tailscale
+  #   devices:
+  #     - /dev/net/tun:/dev/net/tun
+  #   environment:
+  #     - TS_AUTHKEY=${TS_AUTHKEY}
+  #     - TS_STATE_DIR=/var/lib/tailscale
+  #     - TS_USERSPACE=false
+  #     - TS_EXTRA_ARGS=--hostname=cliptok --accept-dns=false --accept-routes=false # i'm not having my tailnet misconfigurations break cliptok
+  #   cap_add:
+  #     - net_admin
+  #     - sys_module
+  #   restart: always
+  #   extra_hosts:
+  #     - "paste.erisa.ts.net:100.104.163.12"
