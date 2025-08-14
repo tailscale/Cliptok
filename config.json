@@ -111,7 +111,7 @@
   "gitListDirectory": "Private",
   "everyoneExcludedChannels": [1388174464428019904],
   "massEmojiThreshold": 6,
-  "unrestrictedEmojiChannels": [],
+  "unrestrictedEmojiChannels": [1388174831345995888],
   "lockdownEnabledChannels": [
     1379528470354198551,
     1388169880255332412,
@@ -138,12 +138,9 @@
   "increasedLineLimit": 1000,
   "lineLimitTier": 3,
   "lineLimitExcludedChannels": [
-    150909911952392193,
-    240528256292356096,
-    173743310878277634,
-    667438432615792653,
-    438383036422422529,
-    1006577277313744996
+    1388174831345995888,
+    1388174223629095052,
+    1388169880255332412
   ],
   "giveawaysChannel": 0,
   "giveawayBot": 0,
