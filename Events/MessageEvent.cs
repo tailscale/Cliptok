@@ -28,6 +28,14 @@ namespace Cliptok.Events
             {
                 client.Logger.LogDebug("Got a message create event for a message with no author: {message}", DiscordHelpers.MessageLink(e.Message));
             }
+            else if (e.Message.Channel is null)
+            {
+                client.Logger.LogDebug("Got a message create event for a message with no channel: {messageId} by {user}", e.Message.Id, e.Message.Author.Id);
+            }
+            else if (e.Message.Channel.Guild is null && !e.Message.Channel.IsPrivate)
+            {
+                client.Logger.LogDebug("Got a message create event for a non-DM message with no guild: {messageId} in {channelId} by {user}", e.Message.Id, e.Message.Channel.Id, e.Message.Author.Id);
+            }
             else
             {
                 client.Logger.LogDebug("Got a message create event for {message} by {user}", DiscordHelpers.MessageLink(e.Message), e.Message.Author.Id);
@@ -46,6 +54,14 @@ namespace Cliptok.Events
             else if (e.Message.Author is null)
             {
                 client.Logger.LogDebug("Got a message update event for a message with no author: {message}", DiscordHelpers.MessageLink(e.Message));
+            }
+            else if (e.Message.Channel is null)
+            {
+                client.Logger.LogDebug("Got a message update event for a message with no channel: {messageId} by {user}", e.Message.Id, e.Message.Author.Id);
+            }
+            else if (e.Message.Channel.Guild is null && !e.Message.Channel.IsPrivate)
+            {
+                client.Logger.LogDebug("Got a message update event for a non-DM message with no guild: {messageId} in {channelId} by {user}", e.Message.Id, e.Message.Channel.Id, e.Message.Author.Id);
             }
             else
             {
@@ -68,6 +84,14 @@ namespace Cliptok.Events
             else if (e.Message.Author is null)
             {
                 client.Logger.LogDebug("Got a message delete event for a message with no author: {message}", DiscordHelpers.MessageLink(e.Message));
+            }
+            else if (e.Message.Channel is null)
+            {
+                client.Logger.LogDebug("Got a message delete event for a message with no channel: {messageId} by {user}", e.Message.Id, e.Message.Author.Id);
+            }
+            else if (e.Message.Channel.Guild is null && !e.Message.Channel.IsPrivate)
+            {
+                client.Logger.LogDebug("Got a message delete event for a non-DM message with no guild: {messageId} in {channelId} by {user}", e.Message.Id, e.Message.Channel.Id, e.Message.Author.Id);
             }
             else
             {
@@ -378,7 +402,7 @@ namespace Cliptok.Events
             try
             {
                 #region return early checks
-                if (message.Timestamp is not null && message.Timestamp.Value.Year < (DateTime.Now.Year - 2))
+                if (message.Timestamp is not null && message.Timestamp.Value.Year < (DateTime.UtcNow.Year - 2))
                     return;
 
                 if (isAnEdit && message.BaseMessage is not null && (message.BaseMessage.EditedTimestamp is null || message.BaseMessage.EditedTimestamp == message.BaseMessage.CreationTimestamp || message.BaseMessage.EditedTimestamp < DateTimeOffset.Now - TimeSpan.FromDays(1)))
@@ -606,7 +630,7 @@ namespace Cliptok.Events
                         if (
                             duplicateMessageCache.ContainsKey(message.Author.Id)
                             && duplicateMessageCache[message.Author.Id].Content == msgContentWithEmbedData
-                            && (DateTime.Now - duplicateMessageCache[message.Author.Id].LastMessageTime).TotalSeconds < Program.cfgjson.DuplicateMessageSeconds)
+                            && (DateTime.UtcNow - duplicateMessageCache[message.Author.Id].LastMessageTime).TotalSeconds < Program.cfgjson.DuplicateMessageSeconds)
                         {
                             duplicateMessageCache[message.Author.Id].Messages.Add(message);
                             duplicateMessageCache[message.Author.Id].LastMessageTime = message.Timestamp.HasValue ? message.Timestamp.Value.UtcDateTime : DateTime.UtcNow;
@@ -632,6 +656,7 @@ namespace Cliptok.Events
                                 deletedMessageCache.Add(message.Id);
                                 var warning = await WarningHelpers.GiveWarningAsync(message.Author, client.CurrentUser, reason, contextMessage: msg, channel, " automatically ");
                                 await InvestigationsHelpers.SendInfringingMessaageAsync("investigations", message, reason, warning.ContextLink, messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
+                                await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, warning.ContextLink, messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
                                 return;
                             }
                         }
@@ -795,6 +820,7 @@ namespace Cliptok.Events
                             string reason = "Sent a malicious Discord invite";
 
                             DiscordMessage msg = await WarningHelpers.SendPublicWarningMessageAndDeleteInfringingMessageAsync(message, $"{Program.cfgjson.Emoji.Denied} {message.Author.Mention} was automatically warned: **{reason.Replace("`", "\\`").Replace("*", "\\*")}**", wasAutoModBlock);
+                            await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, null, messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
                             var warning = await WarningHelpers.GiveWarningAsync(message.Author, client.CurrentUser, reason, contextMessage: msg, channel, " automatically ");
 
                             string responseToSend = $"```json\n{JsonConvert.SerializeObject(maliciousCache)}\n```";
@@ -893,6 +919,7 @@ namespace Cliptok.Events
 
                                 var msgOut = await WarningHelpers.SendPublicWarningMessageAndDeleteInfringingMessageAsync(message, pardonOutput, wasAutoModBlock);
                                 await InvestigationsHelpers.SendInfringingMessaageAsync("investigations", message, reason, DiscordHelpers.MessageLink(msgOut), messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
+                                await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, DiscordHelpers.MessageLink(msgOut), messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
                                 return;
                             }
 
@@ -906,6 +933,7 @@ namespace Cliptok.Events
                             DiscordMessage msg = await WarningHelpers.SendPublicWarningMessageAndDeleteInfringingMessageAsync(message, output, wasAutoModBlock);
                             var warning = await WarningHelpers.GiveWarningAsync(message.Author, client.CurrentUser, reason, contextMessage: msg, channel, " automatically ");
                             await InvestigationsHelpers.SendInfringingMessaageAsync("investigations", message, reason, warning.ContextLink, messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
+                            await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, warning.ContextLink, messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
                             return;
                         }
                         #endregion
@@ -918,16 +946,16 @@ namespace Cliptok.Events
                             {
                                 if (supportRatelimit.ContainsKey(message.Author.Id))
                                 {
-                                    if (supportRatelimit[message.Author.Id] > DateTime.Now)
+                                    if (supportRatelimit[message.Author.Id] > DateTime.UtcNow)
                                         return;
                                     else
                                         supportRatelimit.Remove(message.Author.Id);
                                 }
 
-                                supportRatelimit.Add(message.Author.Id, DateTime.Now.Add(TimeSpan.FromMinutes(Program.cfgjson.SupportRatelimitMinutes)));
+                                supportRatelimit.Add(message.Author.Id, DateTime.UtcNow.Add(TimeSpan.FromMinutes(Program.cfgjson.SupportRatelimitMinutes)));
 
                                 var embed = new DiscordEmbedBuilder()
-                                    .WithTimestamp(DateTime.Now)
+                                    .WithTimestamp(DateTime.UtcNow)
                                     .WithAuthor(DiscordHelpers.UniqueUsername(message.Author), null, $"https://cdn.discordapp.com/avatars/{message.Author.Id}/{message.Author.AvatarHash}.png?size=128");
 
                                 var lastMsgs = await channel.GetMessagesBeforeAsync(message.Id, 50).ToListAsync();
@@ -982,6 +1010,7 @@ namespace Cliptok.Events
 
                                 string reason = "Sending phishing URL(s)";
                                 DiscordMessage msg = await WarningHelpers.SendPublicWarningMessageAndDeleteInfringingMessageAsync(message, $"{Program.cfgjson.Emoji.Denied} {message.Author.Mention} was automatically warned: **{reason.Replace("`", "\\`").Replace("*", "\\*")}**", wasAutoModBlock);
+                                await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, null, messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
                                 var warning = await WarningHelpers.GiveWarningAsync(message.Author, client.CurrentUser, reason, contextMessage: msg, channel, " automatically ");
 
                                 string responseToSend = (await StringHelpers.CodeOrHasteBinAsync(responseText, "json", 1000, true)).Text;
@@ -1011,6 +1040,7 @@ namespace Cliptok.Events
 
                         string reason = "Attempted to ping everyone/here";
                         DiscordMessage msg = await WarningHelpers.SendPublicWarningMessageAndDeleteInfringingMessageAsync(message, $"{Program.cfgjson.Emoji.Denied} {message.Author.Mention} was automatically warned: **{reason.Replace("`", "\\`").Replace("*", "\\*")}**", wasAutoModBlock);
+                        await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, null, messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
                         var warning = await WarningHelpers.GiveWarningAsync(message.Author, client.CurrentUser, reason, contextMessage: msg, channel, " automatically ");
                         await InvestigationsHelpers.SendInfringingMessaageAsync("investigations", message, reason, warning.ContextLink, messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
                         return;
@@ -1083,13 +1113,14 @@ namespace Cliptok.Events
                             {
                                 messageBuilder.AddActionRowComponent(new DiscordButtonComponent(DiscordButtonStyle.Secondary, "line-limit-deleted-message-callback", "View message content", false, null));
                                 msg = await channel.SendMessageAsync(messageBuilder);
-                                await Program.redis.HashSetAsync("deletedMessageReferences", msg.Id, message.Content);
+                                await Program.redis.HashSetAsync("deletedMessageReferences", msg.Id, msgContentWithEmbedData);
                             }
                             else
                             {
                                 msg = await channel.SendMessageAsync(messageBuilder);
                             }
                             await InvestigationsHelpers.SendInfringingMessaageAsync("investigations", message, reason, DiscordHelpers.MessageLink(msg), messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
+                            await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, DiscordHelpers.MessageLink(msg), messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
                             return;
                         }
                         else
@@ -1103,13 +1134,14 @@ namespace Cliptok.Events
                             {
                                 messageBuilder.AddActionRowComponent(new DiscordButtonComponent(DiscordButtonStyle.Secondary, "line-limit-deleted-message-callback", "View message content", false, null));
                                 msg = await channel.SendMessageAsync(messageBuilder);
-                                await Program.redis.HashSetAsync("deletedMessageReferences", msg.Id, message.Content);
+                                await Program.redis.HashSetAsync("deletedMessageReferences", msg.Id, msgContentWithEmbedData);
                             }
                             else
                             {
                                 msg = await channel.SendMessageAsync(messageBuilder);
                             }
 
+                            await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, null, messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
                             var warning = await WarningHelpers.GiveWarningAsync(message.Author, client.CurrentUser, reason, contextMessage: msg, channel, " automatically ");
                             await InvestigationsHelpers.SendInfringingMessaageAsync("investigations", message, reason, warning.ContextLink, messageContentOverride: msgContentWithEmbedData, wasAutoModBlock: wasAutoModBlock);
 
@@ -1282,6 +1314,7 @@ namespace Cliptok.Events
                 string reason = "Sent a malicious Discord invite";
 
                 DiscordMessage msg = await message.Channel.SendMessageAsync($"{Program.cfgjson.Emoji.Denied} {message.Author.Mention} was automatically warned: **{reason.Replace("`", "\\`").Replace("*", "\\*")}**");
+                await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, null, messageContentOverride: messageContentOverride, wasAutoModBlock: wasAutoModBlock);
                 var warning = await WarningHelpers.GiveWarningAsync(message.Author, client.CurrentUser, reason, contextMessage: msg, message.Channel, " automatically ");
 
                 string responseToSend = $"```json\n{responseString}\n```";
