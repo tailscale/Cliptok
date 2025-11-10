@@ -15,7 +15,8 @@ namespace Cliptok.Events
 
             // Remove reactions from warning/mute/ban messages
 
-            if (targetMessage.Author.Id == discord.CurrentUser.Id &&
+            if ( !e.Guild.Emojis.Any(em => em.Value.Id == e.Emoji.Id) &&
+                targetMessage.Author.Id == discord.CurrentUser.Id &&
                 warn_msg_rx.IsMatch(targetMessage.Content) ||
                 auto_warn_msg_rx.IsMatch(targetMessage.Content) ||
                 mute_msg_rx.IsMatch(targetMessage.Content) ||
@@ -25,9 +26,10 @@ namespace Cliptok.Events
             {
                 await targetMessage.DeleteReactionAsync(e.Emoji, e.User);
                 var emoji = e.Emoji.Id != 0 ? $"[{e.Emoji.Name}](<{e.Emoji.Url}>)" : e.Emoji.ToString();
-                await LogChannelHelper.LogMessageAsync("reactions", $"<:WindowsRecycleBin:824380487920910348> Removed reaction {emoji} from {targetMessage.JumpLink} by {e.User.Mention}");
+                await LogChannelHelper.LogMessageAsync("reactions", $"{cfgjson.Emoji.Deleted} Removed reaction {emoji} from {targetMessage.JumpLink} by {e.User.Mention}");
                 return;
             }
+
 
             // Remove self-heartosofts
             if (e.Emoji.Id == cfgjson.HeartosoftId)
