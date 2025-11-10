@@ -15,14 +15,14 @@ namespace Cliptok.Events
 
             // Remove reactions from warning/mute/ban messages
 
-            if ( !e.Guild.Emojis.Any(em => em.Value.Id == e.Emoji.Id) &&
+            if ( !e.Guild.Emojis.ContainsKey(e.Emoji.Id) &&
                 targetMessage.Author.Id == discord.CurrentUser.Id &&
-                warn_msg_rx.IsMatch(targetMessage.Content) ||
+                (warn_msg_rx.IsMatch(targetMessage.Content) ||
                 auto_warn_msg_rx.IsMatch(targetMessage.Content) ||
                 mute_msg_rx.IsMatch(targetMessage.Content) ||
                 unmute_msg_rx.IsMatch(targetMessage.Content) ||
                 ban_msg_rx.IsMatch(targetMessage.Content) ||
-                unban_msg_rx.IsMatch(targetMessage.Content))
+                unban_msg_rx.IsMatch(targetMessage.Content)))
             {
                 await targetMessage.DeleteReactionAsync(e.Emoji, e.User);
                 var emoji = e.Emoji.Id != 0 ? $"[{e.Emoji.Name}](<{e.Emoji.Url}>)" : e.Emoji.ToString();
