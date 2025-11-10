@@ -83,7 +83,6 @@
     "on": "☑️",
     "off": "✖️",
     "insider": "",
-    "windows10": ""
   },
   "redis": {
     "host": "localhost",

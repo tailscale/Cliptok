@@ -239,7 +239,6 @@ namespace Cliptok.Events
                 var insiderDevRole = await e.Guild.GetRoleAsync(cfgjson.UserRoles.InsiderDev);
                 var insiderBetaRole = await e.Guild.GetRoleAsync(cfgjson.UserRoles.InsiderBeta);
                 var insiderRPRole = await e.Guild.GetRoleAsync(cfgjson.UserRoles.InsiderRP);
-                var insider10RPRole = await e.Guild.GetRoleAsync(cfgjson.UserRoles.Insider10RP);
                 var patchTuesdayRole = await e.Guild.GetRoleAsync(cfgjson.UserRoles.PatchTuesday);
 
                 // Show menu with current Insider roles, apply new roles based on user selection
@@ -250,9 +249,8 @@ namespace Cliptok.Events
                         new("Windows 11 Dev channel", "insiders-info-w11-dev", isDefault: member.Roles.Contains(insiderDevRole)),
                         new("Windows 11 Beta channel", "insiders-info-w11-beta", isDefault: member.Roles.Contains(insiderBetaRole)),
                         new("Windows 11 Release Preview channel", "insiders-info-w11-rp", isDefault: member.Roles.Contains(insiderRPRole)),
-                        new("Windows 10 Release Preview channel", "insiders-info-w10-rp", isDefault: member.Roles.Contains(insider10RPRole)),
                         new("Patch Tuesday", "insiders-info-pt", isDefault: member.Roles.Contains(patchTuesdayRole)),
-                    }, minOptions: 0, maxOptions: 6);
+                    }, minOptions: 0, maxOptions: 5);
 
                 var builder = new DiscordFollowupMessageBuilder()
                     .WithContent($"{cfgjson.Emoji.Insider} Use the menu below to toggle your Insider roles!")
@@ -279,7 +277,6 @@ namespace Cliptok.Events
                     { "insiders-info-w11-dev", cfgjson.UserRoles.InsiderDev },
                     { "insiders-info-w11-beta", cfgjson.UserRoles.InsiderBeta },
                     { "insiders-info-w11-rp", cfgjson.UserRoles.InsiderRP },
-                    { "insiders-info-w10-rp", cfgjson.UserRoles.Insider10RP },
                     { "insiders-info-pt", cfgjson.UserRoles.PatchTuesday }
                 };
 
@@ -332,7 +329,6 @@ namespace Cliptok.Events
                     cfgjson.UserRoles.InsiderDev,
                     cfgjson.UserRoles.InsiderBeta,
                     cfgjson.UserRoles.InsiderRP,
-                    cfgjson.UserRoles.Insider10RP,
                     cfgjson.UserRoles.PatchTuesday
                 };
                 if (member.Roles.Any(x => insiderRoles.Contains(x.Id)))
@@ -429,7 +425,7 @@ namespace Cliptok.Events
                     var msg = await e.Interaction.Channel.GetMessageAsync(ctx.msgId);
 
                     // Set up content, add role mentions if they arent anywhere else in the content already
-                    string content = e.Values["editannounce-modal-new-text"];
+                    string content = (e.Values["editannounce-modal-new-text"] as TextInputModalSubmission).Value;
                     if (role2 is not null && !content.Contains(role2.Id.ToString()))
                         content = $"{role2.Mention} {content}";
                     if (!content.Contains(role1.Id.ToString()))

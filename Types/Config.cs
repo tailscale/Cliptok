@@ -276,6 +276,9 @@
 
         [JsonProperty("enablePersistentDb")]
         public bool EnablePersistentDb { get; set; } = false;
+        
+        [JsonProperty("compromisedAccountBanAutoPardonHours")]
+        public int CompromisedAccountBanAutoPardonHours { get; private set; } = 0;
 
         [JsonProperty("disableMicrosoftCommands")]
         public bool DisableMicrosoftCommands { get; set; } = false;
@@ -433,10 +436,6 @@
 
         [JsonProperty("insider")]
         public string Insider { get; set; }
-
-        [JsonProperty("windows10")]
-        public string Windows10 { get; set; }
-
     }
 
     public class CoreConfig
@@ -471,9 +470,6 @@
 
         [JsonProperty("insiderRP")]
         public ulong InsiderRP { get; private set; }
-
-        [JsonProperty("insider10RP")]
-        public ulong Insider10RP { get; private set; }
 
         [JsonProperty("insiderChat")]
         public ulong InsiderChat { get; private set; }
