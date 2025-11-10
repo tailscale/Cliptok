@@ -127,6 +127,11 @@ namespace Cliptok.Events
                 if (e.Exception is System.ArgumentException or DSharpPlus.Commands.Exceptions.ArgumentParseException)
                     embed.AddField("Note", "This usually means that you used the command incorrectly.\n" +
                         "Please double-check how to use this command.");
+
+                if (cfgjson.SilentMode && e.Exception is ChecksFailedException)
+                {
+                    return;
+                }
                 await e.Context.RespondAsync(embed: embed.Build()).ConfigureAwait(false);
             }
         }

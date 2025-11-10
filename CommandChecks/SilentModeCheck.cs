@@ -1,10 +1,10 @@
 namespace Cliptok.CommandChecks
 {
-    public class SilentModeCheckAttribute : ContextCheckAttribute;
+    public class SilentModeAttribute : ContextCheckAttribute;
 
-    public class SilentModeCheck : IContextCheck<SilentModeCheckAttribute>
+    public class SilentModeCheck : IContextCheck<SilentModeAttribute>
     {
-        public async ValueTask<string?> ExecuteCheckAsync(SilentModeCheckAttribute attribute, CommandContext ctx)
+        public async ValueTask<string?> ExecuteCheckAsync(SilentModeAttribute attribute, CommandContext ctx)
         {
             if (ctx.Member == null)
                 return null;

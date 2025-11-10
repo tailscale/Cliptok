@@ -82,7 +82,7 @@
     "windows11": "",
     "on": "☑️",
     "off": "✖️",
-    "insider": "",
+    "insider": ""
   },
   "redis": {
     "host": "localhost",

@@ -10,7 +10,7 @@ namespace Cliptok.Commands
         // https://github.com/DSharpPlus/DSharpPlus/blob/1c1aa15/DSharpPlus.CommandsNext/CommandsNextExtension.cs#L829
         [Command("helptextcmd"), Description("Displays command help.")]
         [TextAlias("help")]
-        [SilentModeCheck]
+        [SilentMode]
         [AllowedProcessors(typeof(TextCommandProcessor))]
         public static async Task Help(CommandContext ctx, [Description("Command to provide help for."), RemainingText] string command = "")
         {
@@ -67,9 +67,12 @@ namespace Cliptok.Commands
                                     if (level == ServerPermLevel.Nothing && Program.rand.Next(1, 100) == 69)
                                         levelText = $"naught but a thing, my dear human. Congratulations, you win {Program.rand.Next(1, 10)} bonus points.";
 
-                                    await ctx.RespondAsync(
-                                        $"{Program.cfgjson.Emoji.NoPermissions} Invalid permissions to use command **{command.Replace("textcmd", "")}**!\n" +
-                                        $"Required: `{att.TargetLvl}`\nYou have: `{levelText}`");
+                                    if (!Program.cfgjson.SilentMode)
+                                    {
+                                        await ctx.RespondAsync(
+                                            $"{Program.cfgjson.Emoji.NoPermissions} Invalid permissions to use command **{command.Replace("textcmd", "")}**!\n" +
+                                            $"Required: `{att.TargetLvl}`\nYou have: `{levelText}`");
+                                    }
 
                                     return;
                                 }
@@ -220,7 +223,7 @@ namespace Cliptok.Commands
 
         [Command("pingtextcmd")]
         [TextAlias("ping")]
-        [SilentModeCheck]
+        [SilentMode]
         [Description("Pong? This command lets you know whether I'm working well.")]
         [AllowedProcessors(typeof(TextCommandProcessor))]
         public async Task Ping(TextCommandContext ctx)
@@ -237,7 +240,7 @@ namespace Cliptok.Commands
 
         [Command("userinfo")]
         [TextAlias("user-info", "whois")]
-        [SilentModeCheck]
+        [SilentMode]
         [Description("Show info about a user.")]
         [AllowedProcessors(typeof(SlashCommandProcessor), typeof(TextCommandProcessor))]
         public async Task UserInfoSlashCommand(CommandContext ctx, [Parameter("user"), Description("The user to retrieve information about.")] DiscordUser user = null, [Parameter("public"), Description("Whether to show the output publicly.")] bool publicMessage = false)

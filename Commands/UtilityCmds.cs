@@ -92,7 +92,7 @@ namespace Cliptok.Commands
 
         [Command("timestamptextcmd")]
         [TextAlias("timestamp", "ts", "time")]
-        [SilentModeCheck]
+        [SilentMode]
         [Description("Returns various timestamps for a given Discord ID/snowflake")]
         [AllowedProcessors(typeof(TextCommandProcessor))]
         [HomeServer]
