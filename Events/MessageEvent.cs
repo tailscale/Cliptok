@@ -598,7 +598,7 @@ namespace Cliptok.Events
                 #endregion
 
                 #region content filters
-                if ((await GetPermLevelAsync(member)) < ServerPermLevel.TrialModerator)
+                if ((await GetPermLevelAsync(member)) < ServerPermLevel.TrialModerator || member.Roles.Any(x => Program.cfgjson.AutoModExcludedRoles.Contains(x.Id)))
                 {
                     #region mass mentions ban filter
                     if ((message.MentionedUsers is not null && message.MentionedUsers.Count > Program.cfgjson.MassMentionBanThreshold) || (message.MentionedUsersCount > Program.cfgjson.MassMentionBanThreshold))

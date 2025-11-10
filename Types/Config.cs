@@ -300,6 +300,9 @@
 
         [JsonProperty("autoModRules")]
         public List<AutoModRuleConfig> AutoModRules { get; set; } = new();
+
+        [JsonProperty("autoModExcludedRoles")]
+        public List<ulong> AutoModExcludedRoles { get; set; } = new();
     }
 
     public class AutoModRuleConfig
