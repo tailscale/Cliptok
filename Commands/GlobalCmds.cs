@@ -10,6 +10,7 @@ namespace Cliptok.Commands
         // https://github.com/DSharpPlus/DSharpPlus/blob/1c1aa15/DSharpPlus.CommandsNext/CommandsNextExtension.cs#L829
         [Command("helptextcmd"), Description("Displays command help.")]
         [TextAlias("help")]
+        [SilentModeCheck]
         [AllowedProcessors(typeof(TextCommandProcessor))]
         public static async Task Help(CommandContext ctx, [Description("Command to provide help for."), RemainingText] string command = "")
         {
@@ -219,6 +220,7 @@ namespace Cliptok.Commands
 
         [Command("pingtextcmd")]
         [TextAlias("ping")]
+        [SilentModeCheck]
         [Description("Pong? This command lets you know whether I'm working well.")]
         [AllowedProcessors(typeof(TextCommandProcessor))]
         public async Task Ping(TextCommandContext ctx)
@@ -235,6 +237,7 @@ namespace Cliptok.Commands
 
         [Command("userinfo")]
         [TextAlias("user-info", "whois")]
+        [SilentModeCheck]
         [Description("Show info about a user.")]
         [AllowedProcessors(typeof(SlashCommandProcessor), typeof(TextCommandProcessor))]
         public async Task UserInfoSlashCommand(CommandContext ctx, [Parameter("user"), Description("The user to retrieve information about.")] DiscordUser user = null, [Parameter("public"), Description("Whether to show the output publicly.")] bool publicMessage = false)

@@ -97,6 +97,7 @@ namespace Cliptok.Commands
         }
 
         [Command("warnings")]
+        [SilentModeCheck]
         [Description("Fetch the warnings for a user.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
         public async Task WarningsSlashCommand(SlashCommandContext ctx,
@@ -674,6 +675,7 @@ namespace Cliptok.Commands
             Command("warnlookuptextcmd"),
             Description("Looks up information about a warning. Shows only publicly available information."),
             TextAlias("warnlookup", "warning", "warming", "waming", "wamming", "lookup", "lookylooky", "peek", "investigate", "what-did-i-do-wrong-there", "incident"),
+            SilentModeCheck,
             AllowedProcessors(typeof(TextCommandProcessor)),
             HomeServer
         ]

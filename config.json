@@ -261,5 +261,6 @@
   ],
   "autoModExcludedRoles": [
     1384888241043537930
-  ]
+  ],
+  "silentMode": true
 }

@@ -303,6 +303,9 @@
 
         [JsonProperty("autoModExcludedRoles")]
         public List<ulong> AutoModExcludedRoles { get; set; } = new();
+
+        [JsonProperty("silentMode")]
+        public bool SilentMode { get; set; } = false;
     }
 
     public class AutoModRuleConfig
