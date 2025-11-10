@@ -17,9 +17,14 @@
   "supportRatelimitMinutes": 15,
   "announcementRoles": {},
   "announcementRolesFriendlyNames": {},
-  "appealLink": "https://tailscale.com/contact/support",
-  "inviteExclusion": ["c84AZQhmpx"],
-  "inviteIDExclusion": [896711691637780480],
+  "appealLink": "https://forms.gle/phvDXcnWQhQ5w11x7",
+  "inviteExclusion": [
+    "c84AZQhmpx"
+  ],
+  "inviteIDExclusion": [
+    896711691637780480,
+    677701098101932032
+  ],
   "warningDaysThreshold": 30,
   "autoMuteThresholds": {
     "2": 3,
@@ -109,9 +114,14 @@
     }
   ],
   "gitListDirectory": "Private",
-  "everyoneExcludedChannels": [1388174464428019904],
+  "everyoneExcludedChannels": [
+    1388174464428019904
+  ],
   "massEmojiThreshold": 6,
-  "unrestrictedEmojiChannels": [1388174831345995888],
+  "unrestrictedEmojiChannels": [
+    1388174831345995888,
+    1406996517784387674
+  ],
   "lockdownEnabledChannels": [
     1379528470354198551,
     1388169880255332412,
@@ -125,22 +135,32 @@
     1392097619228229684,
     1388174355300618433,
     1388174303786303551,
-    1388174344097628252
+    1388174344097628252,
+    1406996517784387674,
+    1405948286090743829,
+    1417540669144174802,
+    1408533387500589077,
+    1417833029908566077,
+    1420103948966035476,
+    1406997571762913341
   ],
   "heartosoftId": 0,
   "autoDehoistCharacters": " !\"#$%&'()*+,-./:;<=>?@[\\]^_`'",
   "secondaryAutoDehoistCharacters": "0123456789",
   "hastebinEndpoint": "",
   "hastebinType": "",
-  "userRoles": {},
+  "userRoles": null,
   "modmailCategory": 0,
-  "lineLimit": 30,
-  "increasedLineLimit": 1000,
+  "lineLimit": 10000,
+  "increasedLineLimit": 10000,
   "lineLimitTier": 3,
   "lineLimitExcludedChannels": [
     1388174831345995888,
     1388174223629095052,
-    1388169880255332412
+    1388169880255332412,
+    1388174325663662251,
+    1388174325663662251,
+    1406996517784387674
   ],
   "giveawaysChannel": 0,
   "giveawayBot": 0,
@@ -192,11 +212,13 @@
     1392166220739907654
   ],
   "ignoredVoiceChannels": [],
-  "enableTextInVoice": true,
+  "enableTextInVoice": false,
   "tqsRoleId": 0,
   "supportForumIntroThreadId": 0,
   "supportForumId": 1388169880255332412,
-  "everyoneExcludedRoles": [1384516462017777734],
+  "everyoneExcludedRoles": [
+    1384516462017777734
+  ],
   "feedbackHubForum": 0,
   "forumIntroPosts": [],
   "insiderThreads": {},
@@ -209,12 +231,14 @@
   "tqsMuteDurationHours": 2,
   "autoWarnMsgAutoDeleteDays": 3,
   "compromisedAccountBanMsgAutoDeleteDays": 3,
-  "logLevel": "Debug",
+  "logLevel": "Information",
   "lokiURL": "",
   "lokiServiceName": "",
   "voiceChannelPurge": true,
   "forumChannelAutoWarnFallbackChannel": 1379528470354198551,
-  "rulesAllowedPublicChannels": [1379528470354198551],
+  "rulesAllowedPublicChannels": [
+    1379528470354198551
+  ],
   "mentionTrackExcludedChannels": [],
   "pingBotOwnersOnBadErrors": false,
   "githubWorkflowSucessString": "[lists:main] 1 new commit",
@@ -227,5 +251,13 @@
   "disableMicrosoftCommands": true,
   "noFun": true,
   "messageCachePruneDays": 7,
-  "messageLogExcludedChannels": [1392240880781361253]
+  "messageLogExcludedChannels": [
+    1392240880781361253
+  ],
+  "autoModRules": [
+    {
+      "ruleId": 1402668023461974076,
+      "action": "mute"
+    }
+  ]
 }
