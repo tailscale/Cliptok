@@ -19,11 +19,16 @@
   "announcementRolesFriendlyNames": {},
   "appealLink": "https://forms.gle/phvDXcnWQhQ5w11x7",
   "inviteExclusion": [
-    "c84AZQhmpx"
+    "c84AZQhmpx",
+    "home-assistant",
+    "BN9M622sMy"
   ],
   "inviteIDExclusion": [
     896711691637780480,
-    677701098101932032
+    677701098101932032,
+    330944238910963714,
+    476259371912003597,
+    128352305413095424
   ],
   "warningDaysThreshold": 30,
   "autoMuteThresholds": {
