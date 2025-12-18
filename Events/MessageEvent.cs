@@ -425,6 +425,24 @@ namespace Cliptok.Events
                 }
                 #endregion
 
+                #region auto-publish
+                if (!isAnEdit
+                    && !wasAutoModBlock
+                    && message.Channel.Type == DiscordChannelType.News
+                    && Program.cfgjson.AutoPublishChannels.Contains(channel.Id)
+                    && (message.BaseMessage.Flags & DiscordMessageFlags.Crossposted) != DiscordMessageFlags.Crossposted)
+                {
+                    try
+                    {
+                        await channel.CrosspostMessageAsync(message.BaseMessage);
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.discord.Logger.LogWarning(ex, "Failed to auto-publish message {message}", DiscordHelpers.MessageLink(message.BaseMessage));
+                    }
+                }
+                #endregion
+
                 if (!limitFilters)
                 {
                     #region tracked user relaying

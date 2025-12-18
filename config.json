@@ -267,5 +267,10 @@
   "autoModExcludedRoles": [
     1384888241043537930
   ],
-  "silentMode": true
+  "silentMode": true,
+  "autoPublishChannels": [
+    1438545511526432898,
+    1438545533164847314,
+    1451203619348283413
+  ]
 }

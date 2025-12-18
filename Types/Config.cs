@@ -306,6 +306,9 @@
 
         [JsonProperty("silentMode")]
         public bool SilentMode { get; set; } = false;
+
+        [JsonProperty("autoPublishChannels")]
+        public List<ulong> AutoPublishChannels { get; set; } = new();
     }
 
     public class AutoModRuleConfig
