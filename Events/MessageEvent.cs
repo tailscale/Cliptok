@@ -27,14 +27,17 @@ namespace Cliptok.Events
             else if (e.Message.Author is null)
             {
                 client.Logger.LogDebug("Got a message create event for a message with no author: {message}", DiscordHelpers.MessageLink(e.Message));
+                return;
             }
             else if (e.Message.Channel is null)
             {
                 client.Logger.LogDebug("Got a message create event for a message with no channel: {messageId} by {user}", e.Message.Id, e.Message.Author.Id);
+                return;
             }
             else if (e.Message.Channel.Guild is null && !e.Message.Channel.IsPrivate)
             {
                 client.Logger.LogDebug("Got a message create event for a non-DM message with no guild: {messageId} in {channelId} by {user}", e.Message.Id, e.Message.Channel.Id, e.Message.Author.Id);
+                return;
             }
             else
             {
@@ -54,14 +57,17 @@ namespace Cliptok.Events
             else if (e.Message.Author is null)
             {
                 client.Logger.LogDebug("Got a message update event for a message with no author: {message}", DiscordHelpers.MessageLink(e.Message));
+                return;
             }
             else if (e.Message.Channel is null)
             {
                 client.Logger.LogDebug("Got a message update event for a message with no channel: {messageId} by {user}", e.Message.Id, e.Message.Author.Id);
+                return;
             }
             else if (e.Message.Channel.Guild is null && !e.Message.Channel.IsPrivate)
             {
                 client.Logger.LogDebug("Got a message update event for a non-DM message with no guild: {messageId} in {channelId} by {user}", e.Message.Id, e.Message.Channel.Id, e.Message.Author.Id);
+                return;
             }
             else
             {
@@ -84,14 +90,17 @@ namespace Cliptok.Events
             else if (e.Message.Author is null)
             {
                 client.Logger.LogDebug("Got a message delete event for a message with no author: {message}", DiscordHelpers.MessageLink(e.Message));
+                return;
             }
             else if (e.Message.Channel is null)
             {
                 client.Logger.LogDebug("Got a message delete event for a message with no channel: {messageId} by {user}", e.Message.Id, e.Message.Author.Id);
+                return;
             }
             else if (e.Message.Channel.Guild is null && !e.Message.Channel.IsPrivate)
             {
                 client.Logger.LogDebug("Got a message delete event for a non-DM message with no guild: {messageId} in {channelId} by {user}", e.Message.Id, e.Message.Channel.Id, e.Message.Author.Id);
+                return;
             }
             else
             {
@@ -613,16 +622,18 @@ namespace Cliptok.Events
 
                 if (member == default)
                     return;
+
+                ServerPermLevel permLevel = await GetPermLevelAsync(member);
                 #endregion
 
                 #region content filters
-                if ((await GetPermLevelAsync(member)) < ServerPermLevel.TrialModerator && !member.Roles.Any(x => Program.cfgjson.AutoModExcludedRoles.Contains(x.Id)))
+                if (permLevel < ServerPermLevel.TrialModerator && !member.Roles.Any(x => Program.cfgjson.AutoModExcludedRoles.Contains(x.Id)))
                 {
-                    #region scam message image URL matching
+                    #region scam message image URL autowarn (<= Tier 1)
                     if (Constants.RegexConstants.image_url_rx.Matches(message.Content).Count >= 3
-                        && (await GetPermLevelAsync(member) == ServerPermLevel.Nothing))
+                        && (permLevel == ServerPermLevel.Nothing || permLevel == ServerPermLevel.Tier1))
                     {
-                        // Message contains 3 or more image urls, and was sent by T0 member; autowarn for probable scam message
+                        // Message contains 3 or more image urls, and was sent by Tier 0 or Tier 1 member; autowarn for probable scam message
 
                         if (wasAutoModBlock)
                             Program.discord.Logger.LogDebug("AutoMod-blocked message in {channelId} by user {userId} triggered scam image URL filter", channel.Id, message.Author.Id);
@@ -754,7 +765,7 @@ namespace Cliptok.Events
                                     // still warn anyway
                                 }
 
-                                if (listItem.Name == "autoban.txt" && (await GetPermLevelAsync(member)) < ServerPermLevel.Tier4)
+                                if (listItem.Name == "autoban.txt" && permLevel < ServerPermLevel.Tier4)
                                 {
                                     await BanHelpers.BanFromServerAsync(message.Author.Id, reason, client.CurrentUser.Id, channel.Guild, 0, channel, default, true);
                                     return;
@@ -785,7 +796,7 @@ namespace Cliptok.Events
                     #region invite filter
                     string checkedMessage = msgContentWithEmbedData.Replace('\\', '/');
 
-                    if ((await GetPermLevelAsync(member)) < (ServerPermLevel)Program.cfgjson.InviteTierRequirement && checkedMessage.Contains("dsc.gg/") ||
+                    if (permLevel < (ServerPermLevel)Program.cfgjson.InviteTierRequirement && checkedMessage.Contains("dsc.gg/") ||
                         checkedMessage.Contains("invite.gg/")
                         )
                     {
@@ -817,7 +828,7 @@ namespace Cliptok.Events
 
                     var inviteMatches = invite_rx.Matches(checkedMessage);
 
-                    if ((await GetPermLevelAsync(member)) < (ServerPermLevel)Program.cfgjson.InviteTierRequirement && inviteMatches.Count > 3)
+                    if (permLevel < (ServerPermLevel)Program.cfgjson.InviteTierRequirement && inviteMatches.Count > 3)
                     {
                         string reason = "Sent too many invites";
                         await DeleteAndWarnAsync(message, reason, client, wasAutoModBlock, messageContentOverride: msgContentWithEmbedData);
@@ -842,7 +853,7 @@ namespace Cliptok.Events
                         if (maliciousCache == default)
                         {
 
-                            if ((await GetPermLevelAsync(member)) < (ServerPermLevel)Program.cfgjson.InviteTierRequirement && disallowedInviteCodes.Contains(code))
+                            if (permLevel < (ServerPermLevel)Program.cfgjson.InviteTierRequirement && disallowedInviteCodes.Contains(code))
                             {
                                 if (!match)
                                 {
@@ -894,7 +905,7 @@ namespace Cliptok.Events
 
 
                         if (
-                        (await GetPermLevelAsync(member)) < (ServerPermLevel)Program.cfgjson.InviteTierRequirement
+                        permLevel < (ServerPermLevel)Program.cfgjson.InviteTierRequirement
                         && (
                             invite.Channel.Type == DiscordChannelType.Group
                             || (
@@ -960,7 +971,7 @@ namespace Cliptok.Events
 
                             string reason = "Mass emoji";
 
-                            if ((await GetPermLevelAsync(member)) == ServerPermLevel.Nothing && !Program.redis.HashExists("emojiPardoned", message.Author.Id.ToString()))
+                            if (permLevel == ServerPermLevel.Nothing && !Program.redis.HashExists("emojiPardoned", message.Author.Id.ToString()))
                             {
                                 await Program.redis.HashSetAsync("emojiPardoned", member.Id.ToString(), false);
                                 string pardonOutput;
@@ -1104,7 +1115,7 @@ namespace Cliptok.Events
                     #endregion
 
                     #region mass mentions warn filter
-                    if (((message.MentionedUsers is not null && message.MentionedUsers.Count >= Program.cfgjson.MassMentionThreshold) || (message.MentionedUsersCount >= Program.cfgjson.MassMentionThreshold)) && (await GetPermLevelAsync(member)) < ServerPermLevel.Tier3)
+                    if (((message.MentionedUsers is not null && message.MentionedUsers.Count >= Program.cfgjson.MassMentionThreshold) || (message.MentionedUsersCount >= Program.cfgjson.MassMentionThreshold)) && permLevel < ServerPermLevel.Tier3)
                     {
                         if (wasAutoModBlock)
                         {
@@ -1138,7 +1149,7 @@ namespace Cliptok.Events
                     if (!Program.cfgjson.LineLimitExcludedChannels.Contains(channel.Id)
                         && (channel.ParentId is null || !Program.cfgjson.LineLimitExcludedChannels.Contains((ulong)channel.ParentId))
                         && (lineCount >= Program.cfgjson.IncreasedLineLimit
-                        || (lineCount >= Program.cfgjson.LineLimit && (await GetPermLevelAsync(member)) < (ServerPermLevel)Program.cfgjson.LineLimitTier)))
+                        || (lineCount >= Program.cfgjson.LineLimit && permLevel < (ServerPermLevel)Program.cfgjson.LineLimitTier)))
                     {
                         if (wasAutoModBlock)
                         {
@@ -1216,7 +1227,7 @@ namespace Cliptok.Events
                     && channel.Parent.Id != Program.cfgjson.TechSupportChannel
                     && channel.Id != Program.cfgjson.SupportForumId
                     && channel.Parent.Id != Program.cfgjson.SupportForumId
-                    && await GetPermLevelAsync(member) < ServerPermLevel.TechnicalQueriesSlayer)
+                    && permLevel < ServerPermLevel.TechnicalQueriesSlayer)
                 {
                         string reason = "Mentioned tech support role outside of tech support channels";
                         
@@ -1248,7 +1259,7 @@ namespace Cliptok.Events
                 if (!limitFilters)
                 {
                     #region feedback hub forum validation
-                    if ((await GetPermLevelAsync(member)) < ServerPermLevel.TrialModerator && !isAnEdit && channel.IsThread && channel.ParentId == Program.cfgjson.FeedbackHubForum && !Program.redis.SetContains("processedFeedbackHubThreads", channel.Id))
+                    if (permLevel < ServerPermLevel.TrialModerator && !isAnEdit && channel.IsThread && channel.ParentId == Program.cfgjson.FeedbackHubForum && !Program.redis.SetContains("processedFeedbackHubThreads", channel.Id))
                     {
                         var thread = (DiscordThreadChannel)channel;
                         Program.redis.SetAdd("processedFeedbackHubThreads", thread.Id);
@@ -1291,11 +1302,31 @@ namespace Cliptok.Events
                     }
                     #endregion
 
-                    #region passive list matching
-                    // Check the passive lists AFTER all other checks.
+                    #region Run passive checks AFTER all other checks.
                     if ((await GetPermLevelAsync(member)) >= ServerPermLevel.TrialModerator)
                         return;
+                    #endregion
 
+                    #region scam message image URL passive match (>= Tier 2)
+                    // Message contains 3 or more image urls, but was sent by Tier 2+ member; just alert in #investigations
+
+                    if (Constants.RegexConstants.image_url_rx.Matches(message.Content).Count >= 3
+                        && permLevel >= ServerPermLevel.Tier2)
+                    {
+                        string content = $"{Program.cfgjson.Emoji.Warning} Detected potential scam message by {message.Author.Mention} in {channel.Mention}:";
+
+                        await InvestigationsHelpers.SendInfringingMessaageAsync(
+                            "investigations",
+                            message,
+                            null,
+                            DiscordHelpers.MessageLink(message),
+                            content: content,
+                            colour: new DiscordColor(0xFEC13D)
+                        );
+                    }
+                    #endregion
+
+                    #region passive list matching
                     foreach (var listItem in Program.cfgjson.WordListList)
                     {
                         if (!listItem.Passive)
