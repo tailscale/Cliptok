@@ -233,7 +233,7 @@
   "autoDeleteEmptyThreads": true,
   "tqsMutedRole": 0,
   "tqsMuteDurationHours": 2,
-  "autoWarnMsgAutoDeleteDays": 3,
+  "autoWarnMsgAutoDeleteHours": 1,
   "compromisedAccountBanMsgAutoDeleteDays": 3,
   "logLevel": "Information",
   "lokiURL": "",
