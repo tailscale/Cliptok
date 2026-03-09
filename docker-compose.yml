@@ -34,6 +34,8 @@ services:
   redis:
     image: mirror.gcr.io/redis:7.2-alpine
     restart: always
+    ports:
+      - "127.0.0.1:6379:6379"
     volumes:
       - type: bind
         source: ./data
@@ -43,6 +45,8 @@ services:
   postgres:
     image: postgres:17-alpine
     restart: always
+    ports:
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: cliptok
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
