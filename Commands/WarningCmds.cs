@@ -77,7 +77,8 @@ namespace Cliptok.Commands
                 channel = ctx.Channel;
 
             var messageBuild = new DiscordMessageBuilder()
-                .WithContent($"{Program.cfgjson.Emoji.Warning} {user.Mention} was warned: **{reason.Replace("`", "\\`").Replace("*", "\\*")}**");
+                .WithContent($"{Program.cfgjson.Emoji.Warning} {user.Mention} was warned: **{reason.Replace("`", "\\`").Replace("*", "\\*")}**")
+                .WithAllowedMention(new UserMention(user));
 
             if (replyMsgId != "0")
             {
@@ -532,7 +533,8 @@ namespace Cliptok.Commands
             }
 
             var messageBuild = new DiscordMessageBuilder()
-                .WithContent($"{Program.cfgjson.Emoji.Warning} <@{targetUser.Id}> was warned: **{reason.Replace("`", "\\`").Replace("*", "\\*")}**");
+                .WithContent($"{Program.cfgjson.Emoji.Warning} <@{targetUser.Id}> was warned: **{reason.Replace("`", "\\`").Replace("*", "\\*")}**")
+                .WithAllowedMention(new UserMention(targetUser));
 
             if (reply is not null)
                 messageBuild.WithReply(reply.Id, true, false);
