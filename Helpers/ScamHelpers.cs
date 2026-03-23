@@ -20,7 +20,7 @@ namespace Cliptok.Helpers
                 if (username.Length < 4)
                     continue;
 
-                if (member.Username.ToLower().Contains(username.ToLower()))
+                if (member.Username.Contains(username, StringComparison.OrdinalIgnoreCase) || member.GlobalName.Contains(username, StringComparison.OrdinalIgnoreCase))
                 {
                     if (autoBannedUsersCache.Contains(member.Id))
                         break;
