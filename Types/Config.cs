@@ -315,6 +315,12 @@
 
         [JsonProperty("autoPublishChannels")]
         public List<ulong> AutoPublishChannels { get; set; } = new();
+
+        [JsonProperty("enableModActionReplyAutoWarn")]
+        public bool EnableModActionReplyAutoWarn { get; set; } = false;
+
+        [JsonProperty("modActionReplyAutoWarnReason")]
+        public string ModActionReplyAutoWarnReason { get; set; } = "";
     }
 
     public class AutoModRuleConfig

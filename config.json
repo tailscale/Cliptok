@@ -272,5 +272,8 @@
     1438545511526432898,
     1438545533164847314,
     1451203619348283413
-  ]
+  ],
+  "compromisedAccountBanAutoPardonHours": 24,
+  "enableModActionReplyAutoWarn":  false,
+  "modActionReplyAutoWarnReason":  ""
 }

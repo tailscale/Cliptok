@@ -24,7 +24,8 @@ namespace Cliptok.Commands
 
             IEnumerable<Command> cmds = ctx.Extension.Commands.Values.Where(cmd =>
                  cmd.Attributes.Any(attr => attr is AllowedProcessorsAttribute apAttr
-                                            && apAttr.Processors.Contains(typeof(TextCommandProcessor))));
+                                            && apAttr.Processors.Contains(typeof(TextCommandProcessor)))
+                 && !cmd.Attributes.Any(attr => attr is HiddenAttribute && command == ""));
 
             if (commandSplit.Length != 0 && commandSplit[0] != "")
             {
@@ -153,6 +154,9 @@ namespace Cliptok.Commands
                     List<Command> eligibleCommands = [];
                     foreach (Command? candidateCommand in commandsToSearch)
                     {
+                        if (candidateCommand.Attributes.Any(x => x is AllowedProcessorsAttribute apa && !apa.Processors.Contains(typeof(TextCommandProcessor))))
+                            continue;
+
                         var executionChecks = candidateCommand.Attributes.Where(x => x is ContextCheckAttribute);
 
                         if (executionChecks == null || !executionChecks.Any())
