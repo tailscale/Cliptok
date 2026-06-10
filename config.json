@@ -15,8 +15,6 @@
   "communityTechSupportRoleID": 0,
   "modmailUserId": 0,
   "supportRatelimitMinutes": 15,
-  "announcementRoles": {},
-  "announcementRolesFriendlyNames": {},
   "appealLink": "https://forms.gle/phvDXcnWQhQ5w11x7",
   "inviteExclusion": [
     "c84AZQhmpx",

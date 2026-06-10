@@ -4,40 +4,42 @@ namespace Cliptok.Commands
 {
     public class UtilityCmds
     {
-        [Command("Dump message data")]
-        [SlashCommandTypes(DiscordApplicationCommandType.MessageContextMenu)]
-        [AllowedProcessors(typeof(MessageCommandProcessor))]
-        public async Task DumpMessage(MessageCommandContext ctx, DiscordMessage targetMessage)
+        [Command("grant")]
+        [Description("Grant a user access to the server, bypassing any verification requirements.")]
+        [AllowedProcessors(typeof(SlashCommandProcessor), typeof(TextCommandProcessor))]
+        [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
+        public async Task Grant(CommandContext ctx, [Parameter("user"), Description("The user to grant server access to.")] DiscordUser user)
         {
-            var rawMsgData = JsonConvert.SerializeObject(targetMessage, Formatting.Indented);
-            await ctx.RespondAsync((await StringHelpers.CodeOrHasteBinAsync(rawMsgData, "json")).Text, ephemeral: true);
-        }
+            DiscordMember member = default;
+            try
+            {
+                member = await ctx.Guild.GetMemberAsync(user.Id);
+            }
+            catch (Exception)
+            {
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} That user does not appear to be in the server!");
+                return;
+            }
 
-        [Command("Show Avatar")]
-        [SlashCommandTypes(DiscordApplicationCommandType.UserContextMenu)]
-        [AllowedProcessors(typeof(UserCommandProcessor))]
-        public async Task ContextAvatar(UserCommandContext ctx, DiscordUser targetUser)
-        {
-            string avatarUrl = await LykosAvatarMethods.UserOrMemberAvatarURL(targetUser, ctx.Guild);
+            if (!DiscordHelpers.AllowedToMod(await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id), member))
+            {
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} I don't have permission to grant {member.Mention}! Check the role order.");
+                return;
+            }
 
-            DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
-                .WithColor(new DiscordColor(0xC63B68))
-                .WithTimestamp(DateTime.UtcNow)
-                .WithImageUrl(avatarUrl)
-                .WithAuthor(
-                    $"Avatar for {targetUser.Username} (Click to open in browser)",
-                    avatarUrl
-                );
+            if (member.MemberFlags.Value.HasFlag(DiscordMemberFlags.BypassesVerification))
+            {
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} {member.Mention} has already been allowed access to the server!");
+                return;
+            }
 
-            await ctx.RespondAsync(null, embed, ephemeral: true);
-        }
+            await member.ModifyAsync(x =>
+            {
+                x.MemberFlags = (DiscordMemberFlags)member.MemberFlags | DiscordMemberFlags.BypassesVerification;
+                x.AuditLogReason = $"grant command used by {DiscordHelpers.UniqueUsername(ctx.User)}";
+            });
 
-        [Command("User Information")]
-        [SlashCommandTypes(DiscordApplicationCommandType.UserContextMenu)]
-        [AllowedProcessors(typeof(UserCommandProcessor))]
-        public async Task ContextUserInformation(UserCommandContext ctx, DiscordUser targetUser)
-        {
-            await ctx.RespondAsync(embed: await DiscordHelpers.GenerateUserEmbed(targetUser, ctx.Guild), ephemeral: true);
+            await ctx.RespondAsync($"{Program.cfgjson.Emoji.Success} {member.Mention} can now access the server!");
         }
 
         [Command("edittextcmd")]
@@ -87,47 +89,6 @@ namespace Cliptok.Commands
                 await ctx.Message.DeleteAsync();
                 await msg.ModifyAsync(newContent);
             }
-        }
-
-        [Command("timestamptextcmd")]
-        [TextAlias("timestamp", "ts", "time")]
-        [SilentMode]
-        [Description("Returns various timestamps for a given Discord ID/snowflake")]
-        [AllowedProcessors(typeof(TextCommandProcessor))]
-        [HomeServer]
-        class TimestampCmds
-        {
-            [DefaultGroupCommand]
-            [Command("unix")]
-            [TextAlias("u", "epoch")]
-            [Description("Returns the Unix timestamp of a given Discord ID/snowflake")]
-            public async Task TimestampUnixCmd(TextCommandContext ctx, [Description("The ID/snowflake to fetch the Unix timestamp for")] ulong snowflake)
-            {
-                var msSinceEpoch = snowflake >> 22;
-                var msUnix = msSinceEpoch + 1420070400000;
-                await ctx.RespondAsync($"{msUnix / 1000}");
-            }
-
-            [Command("relative")]
-            [TextAlias("r")]
-            [Description("Returns the amount of time between now and a given Discord ID/snowflake")]
-            public async Task TimestampRelativeCmd(TextCommandContext ctx, [Description("The ID/snowflake to fetch the relative timestamp for")] ulong snowflake)
-            {
-                var msSinceEpoch = snowflake >> 22;
-                var msUnix = msSinceEpoch + 1420070400000;
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.ClockTime} <t:{msUnix / 1000}:R>");
-            }
-
-            [Command("fulldate")]
-            [TextAlias("f", "datetime")]
-            [Description("Returns the fully-formatted date and time of a given Discord ID/snowflake")]
-            public async Task TimestampFullCmd(TextCommandContext ctx, [Description("The ID/snowflake to fetch the full timestamp for")] ulong snowflake)
-            {
-                var msSinceEpoch = snowflake >> 22;
-                var msUnix = msSinceEpoch + 1420070400000;
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.ClockTime} <t:{msUnix / 1000}:F>");
-            }
-
         }
 
         [Command("tellraw")]
@@ -227,7 +188,7 @@ namespace Cliptok.Commands
         }
 
         [Command("solved")]
-        [Description("Mark a forum post as solved and close it.")]
+        [Description("Mark a #tech-support-forum post as solved and close it.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
         [HomeServer]
         public async Task MarkTechSupportPostSolved(SlashCommandContext ctx)
@@ -247,7 +208,7 @@ namespace Cliptok.Commands
             // Restrict to OP or TQS members
             if (ctx.User.Id != channel.CreatorId && await GetPermLevelAsync(ctx.Member) < ServerPermLevel.TechnicalQueriesSlayer)
             {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} Only the original poster or a Moderator can mark this post as solved!");
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} Only the original poster or a <@&{Program.cfgjson.TqsRoleId}> can mark this post as solved!");
                 return;
             }
 
@@ -266,7 +227,11 @@ namespace Cliptok.Commands
                 tags.Add(solvedTagId);
                 try
                 {
-                    await channel.ModifyAsync(t => t.AppliedTags = tags);
+                    await channel.ModifyAsync(t =>
+                    {
+                        t.AppliedTags = tags;
+                        t.AuditLogReason = $"/solved command used by {ctx.User.Username}";
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -280,7 +245,11 @@ namespace Cliptok.Commands
 
             try
             {
-                await channel.ModifyAsync(t => t.IsArchived = true);
+                await channel.ModifyAsync(t =>
+                {
+                    t.IsArchived = true;
+                    t.AuditLogReason = $"/solved command used by {ctx.User.Username}";
+                });
             }
             catch (Exception ex)
             {
@@ -303,6 +272,5 @@ namespace Cliptok.Commands
             if (!errorOccurred)
                 await ctx.RespondAsync($"{Program.cfgjson.Emoji.Success} Post successfully marked as solved!", ephemeral: true);
         }
-
     }
 }

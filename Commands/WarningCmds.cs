@@ -4,14 +4,6 @@ namespace Cliptok.Commands
 {
     internal class WarningCmds
     {
-        [Command("Show Warnings")]
-        [SlashCommandTypes(DiscordApplicationCommandType.UserContextMenu)]
-        [AllowedProcessors(typeof(UserCommandProcessor))]
-        public async Task ContextWarnings(UserCommandContext ctx, DiscordUser targetUser)
-        {
-            await ctx.RespondAsync(embed: await WarningHelpers.GenerateWarningsEmbedAsync(targetUser), ephemeral: true);
-        }
-
         [Command("warn")]
         [Description("Formally warn a user, usually for breaking the server rules.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
@@ -117,23 +109,12 @@ namespace Cliptok.Commands
         {
             public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext ctx)
             {
-                return await GetWarningsForAutocompleteAsync(ctx);
-            }
-        }
-        
-        internal partial class PardonedWarningsAutocompleteProvider : IAutoCompleteProvider
-        {
-            public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext ctx)
-            {
-                return await GetWarningsForAutocompleteAsync(ctx, pardonedOnly: true);
-            }
-        }
-        
-        internal partial class UnpardonedWarningsAutocompleteProvider : IAutoCompleteProvider
-        {
-            public async ValueTask<IEnumerable<DiscordAutoCompleteChoice>> AutoCompleteAsync(AutoCompleteContext ctx)
-            {
-                return await GetWarningsForAutocompleteAsync(ctx, excludePardoned: true);
+                if (ctx.Command.FullName == "pardon")
+                    return await GetWarningsForAutocompleteAsync(ctx, excludePardoned: true);
+                else if (ctx.Command.FullName == "unpardon")
+                    return await GetWarningsForAutocompleteAsync(ctx, pardonedOnly: true);
+                else
+                    return await GetWarningsForAutocompleteAsync(ctx);
             }
         }
         
@@ -354,7 +335,7 @@ namespace Cliptok.Commands
         [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
         public async Task PardonSlashCommand(SlashCommandContext ctx,
             [Parameter("user"), Description("The user to pardon a warning for.")] DiscordUser user,
-            [SlashAutoCompleteProvider(typeof(UnpardonedWarningsAutocompleteProvider))][Parameter("warning"), Description("Type to search! Find the warning you want to pardon.")] string warning,
+            [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider))][Parameter("warning"), Description("Type to search! Find the warning you want to pardon.")] string warning,
             [Parameter("public"), Description("Whether to show the output publicly. Default: false")] bool showPublic = false)
         {
             if (warning.Contains(' '))
@@ -416,7 +397,7 @@ namespace Cliptok.Commands
         [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
         public async Task UnpardonSlashCommand(SlashCommandContext ctx,
             [Parameter("user"), Description("The user to unpardon a warning for.")] DiscordUser user,
-            [SlashAutoCompleteProvider(typeof(PardonedWarningsAutocompleteProvider))][Parameter("warning"), Description("Type to search! Find the warning you want to unpardon.")] string warning,
+            [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider))][Parameter("warning"), Description("Type to search! Find the warning you want to unpardon.")] string warning,
             [Parameter("public"), Description("Whether to show the output publicly. Default: false")] bool showPublic = false)
         {
             if (warning.Contains(' '))
