@@ -790,7 +790,7 @@ namespace Cliptok.Events
                     // Message has no content but 3+ attachments
                     || ((message.Content is null || message.Content == "") && message.Attachments is not null && message.Attachments.Count >= 3)
                 )
-                && (permLevel == ServerPermLevel.Nothing || permLevel == ServerPermLevel.Tier1))
+                && (permLevel <= ServerPermLevel.Tier1))
             {
                 // Message contains 3 or more image urls, and was sent by Tier 0 or Tier 1 member; autowarn for probable scam message
 
@@ -799,9 +799,34 @@ namespace Cliptok.Events
                 else
                     Program.discord.Logger.LogDebug("Message {messageId} in {channelId} by user {userId} triggered scam image URL filter", message.Id, channel.Id, message.Author.Id);
 
-                await DeleteAndWarnAsync(message, "Attempted scam message", client, wasAutoModBlock: wasAutoModBlock, messageContentOverride: messageContentOverride);
+                await DiscordHelpers.ThreadChannelAwareDeleteMessageAsync(message);
 
-                return true;
+                string reason = "Possible scam message";
+
+                if (!Program.redis.SetContains("scamMessagePardoned", message.Author.Id.ToString()))
+                {
+                    await Program.redis.SetAddAsync("scamMessagePardoned", message.Author.Id.ToString());
+                    string output = $"{Program.cfgjson.Emoji.Information} {message.Author.Mention}, your message was deleted because it matched patterns of common scam messages." +
+                            $"\nWhen sending multiple images, please either send them separately or include some text in your message to avoid triggering filters.";
+                    DiscordMessage msg = await channel.SendMessageAsync(output);
+                    await InvestigationsHelpers.SendInfringingMessaageAsync("investigations", message, reason, DiscordHelpers.MessageLink(msg), messageContentOverride: messageContentOverride);
+                    await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, DiscordHelpers.MessageLink(msg), messageContentOverride: messageContentOverride);
+                    return true;
+                }
+                else
+                {
+                    string output = $"{Program.cfgjson.Emoji.Denied} {message.Author.Mention} was automatically warned: **{reason.Replace("`", "\\`").Replace("*", "\\*")}**\n"
+                        + $"When sending multiple images, please either send them separately or include some text in your message to avoid triggering filters.";
+                    DiscordMessageBuilder messageBuilder = new();
+                    messageBuilder.WithContent(output);
+                    DiscordMessage msg = await channel.SendMessageAsync(output);
+
+                    await InvestigationsHelpers.SendInfringingMessaageAsync("mod", message, reason, null, messageContentOverride: messageContentOverride);
+                    var warning = await WarningHelpers.GiveWarningAsync(message.Author, client.CurrentUser, reason, contextMessage: msg, channel, " automatically ");
+                    await InvestigationsHelpers.SendInfringingMessaageAsync("investigations", message, reason, warning.ContextLink, messageContentOverride: messageContentOverride);
+
+                    return true;
+                }
             }
             return false;
         }
@@ -1106,7 +1131,7 @@ namespace Cliptok.Events
 
                     string reason = "Mass emoji";
 
-                    if (permLevel == ServerPermLevel.Nothing && !Program.redis.HashExists("emojiPardoned", message.Author.Id.ToString()))
+                    if (permLevel <= ServerPermLevel.Nothing && !Program.redis.HashExists("emojiPardoned", message.Author.Id.ToString()))
                     {
                         await Program.redis.HashSetAsync("emojiPardoned", member.Id.ToString(), false);
                         string pardonOutput;
