@@ -217,6 +217,9 @@ namespace Cliptok.Events
                         }
                     }
 
+                    // delete cached messages so they aren't double-logged if the channel is later deleted
+                    dbContext.Messages.RemoveRange(cachedMessages);
+
                     var cachedUsers = dbContext.Users.Where(u => cachedMessages.Select(m => m.User.Id).Contains(u.Id)).ToList();
                     var (dumpMessage, pasteUrl) = await LogChannelHelper.CreateDumpMessageAsync($"{Program.cfgjson.Emoji.Deleted} {e.Messages.Count} messages were deleted from {e.Channel.Mention}, {cachedMessages.ToList().Count} were logged:", cachedMessages.ToList(), e.Channel);
                     var logMsg = await LogChannelHelper.LogMessageAsync("messages", dumpMessage);
@@ -704,7 +707,8 @@ namespace Cliptok.Events
         {
             #region automatic listupdate for private lists
             if (
-                Program.cfgjson.GitListDirectory is not null
+                !string.IsNullOrEmpty(Program.cfgjson.GitListDirectory)
+                && !string.IsNullOrEmpty(Program.cfgjson.GithubWorkflowSucessString)
                 && Program.cfgjson.GitListDirectory != ""
                 && message.Channel.Id == Program.cfgjson.HomeChannel
                 && message.Author.Discriminator == "0000"
@@ -854,7 +858,7 @@ namespace Cliptok.Events
 
         private static async Task<bool> RunMassMentionsBanFilterAsync(DiscordClient client, MockDiscordMessage message, DiscordChannel channel, DiscordMember member, ServerPermLevel permLevel, string messageContentOverride = default, bool isAnEdit = false, bool limitFilters = false, bool wasAutoModBlock = false)
         {
-            if ((message.MentionedUsers is not null && message.MentionedUsers.Count > Program.cfgjson.MassMentionBanThreshold) || (message.MentionedUsersCount > Program.cfgjson.MassMentionBanThreshold))
+            if (Program.cfgjson.MassMentionBanThreshold > 0 && ((message.MentionedUsers is not null && message.MentionedUsers.Count > Program.cfgjson.MassMentionBanThreshold) || (message.MentionedUsersCount > Program.cfgjson.MassMentionBanThreshold)))
             {
                 if (wasAutoModBlock)
                 {
@@ -1118,7 +1122,7 @@ namespace Cliptok.Events
 
         private static async Task<bool> RunMassEmojiFilterAsync(DiscordClient client, MockDiscordMessage message, DiscordChannel channel, DiscordMember member, ServerPermLevel permLevel, string messageContentOverride = default, bool isAnEdit = false, bool limitFilters = false, bool wasAutoModBlock = false)
         {
-            if (!Program.cfgjson.UnrestrictedEmojiChannels.Contains(channel.Id) && messageContentOverride.Length >= Program.cfgjson.MassEmojiThreshold)
+            if (Program.cfgjson.MassEmojiThreshold > 0 && !Program.cfgjson.UnrestrictedEmojiChannels.Contains(channel.Id) && messageContentOverride.Length >= Program.cfgjson.MassEmojiThreshold)
             {
                 char[] tempArray = messageContentOverride.Replace("🏻", "").Replace("🏼", "").Replace("🏽", "").Replace("🏾", "").Replace("🏿", "").ToCharArray();
                 int pos = 0;
@@ -1240,7 +1244,7 @@ namespace Cliptok.Events
 
         private static async Task<bool> RunMassMentionsWarnFilterAsync(DiscordClient client, MockDiscordMessage message, DiscordChannel channel, DiscordMember member, ServerPermLevel permLevel, string messageContentOverride = default, bool isAnEdit = false, bool limitFilters = false, bool wasAutoModBlock = false)
         {
-            if (((message.MentionedUsers is not null && message.MentionedUsers.Count >= Program.cfgjson.MassMentionThreshold) || (message.MentionedUsersCount >= Program.cfgjson.MassMentionThreshold)) && permLevel < ServerPermLevel.Tier3)
+            if (Program.cfgjson.MassMentionThreshold > 0 && ((message.MentionedUsers is not null && message.MentionedUsers.Count >= Program.cfgjson.MassMentionThreshold) || (message.MentionedUsersCount >= Program.cfgjson.MassMentionThreshold)) && permLevel < ServerPermLevel.Tier3)
             {
                 if (wasAutoModBlock)
                 {
@@ -1260,11 +1264,14 @@ namespace Cliptok.Events
 
         private static async Task<bool> RunLineLimitFilterAsync(DiscordClient client, MockDiscordMessage message, DiscordChannel channel, DiscordMember member, ServerPermLevel permLevel, string messageContentOverride = default, bool isAnEdit = false, bool limitFilters = false, bool wasAutoModBlock = false)
         {
+            if (Program.cfgjson.LineLimit == 0)
+                return false;
+
             var lineCount = CountNewlines(messageContentOverride);
 
             if (!Program.cfgjson.LineLimitExcludedChannels.Contains(channel.Id)
                 && (channel.ParentId is null || !Program.cfgjson.LineLimitExcludedChannels.Contains((ulong)channel.ParentId))
-                && (lineCount >= Program.cfgjson.IncreasedLineLimit
+                && ((Program.cfgjson.IncreasedLineLimit > 0 && lineCount >= Program.cfgjson.IncreasedLineLimit)
                 || (lineCount >= Program.cfgjson.LineLimit && permLevel < (ServerPermLevel)Program.cfgjson.LineLimitTier)))
             {
                 if (wasAutoModBlock)

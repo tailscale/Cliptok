@@ -201,6 +201,12 @@ namespace Cliptok.Commands
         {
             await ctx.DeferResponseAsync(ephemeral: true);
 
+            if (Program.cfgjson.SupportForumId == 0)
+            {
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} The tech support forum channel is not configured! Please contact a bot maintainer.", ephemeral: true);
+                return;
+            }
+
             // Restrict to #tech-support-forum posts
             if (ctx.Channel.Parent is null || ctx.Channel.Parent.Id != Program.cfgjson.SupportForumId)
             {
@@ -214,7 +220,7 @@ namespace Cliptok.Commands
             // Restrict to OP or TQS members
             if (ctx.User.Id != channel.CreatorId && await GetPermLevelAsync(ctx.Member) < ServerPermLevel.TechnicalQueriesSlayer)
             {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} Only the original poster or a <@&{Program.cfgjson.TqsRoleId}> can mark this post as solved!");
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} Only the original poster{(Program.cfgjson.TqsRoleId == 0 ? "" : $" or a <@&{Program.cfgjson.TqsRoleId}>")} can mark this post as solved!");
                 return;
             }
 
