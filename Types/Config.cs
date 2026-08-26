@@ -313,9 +313,6 @@
         [JsonProperty("silentMode")]
         public bool SilentMode { get; set; } = false;
 
-        [JsonProperty("autoPublishChannels")]
-        public List<ulong> AutoPublishChannels { get; set; } = new();
-
         [JsonProperty("enableModActionReplyAutoWarn")]
         public bool EnableModActionReplyAutoWarn { get; set; } = false;
 
@@ -324,6 +321,9 @@
 
         [JsonProperty("duplicateMessageExcludedChannels")]
         public List<ulong> DuplicateMessageExcludedChannels {get; set; } = new();
+
+        [JsonProperty("autoPublishChannels")]
+        public List<ulong> AutoPublishChannels { get; set; } = new();
     }
 
     public class AutoModRuleConfig

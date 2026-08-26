@@ -2,6 +2,10 @@
 {
     internal class ContextMenuCmds
     {
+        // Used to pass context to modal handling
+        // <user ID, message from context>
+        public static Dictionary<ulong, DiscordMessage> ReminderInteractionCache = new();
+
         [Command("Dump message data")]
         [SlashCommandTypes(DiscordApplicationCommandType.MessageContextMenu)]
         [AllowedProcessors(typeof(MessageCommandProcessor))]
@@ -49,7 +53,7 @@
         [Command("Show Notes")]
         [SlashCommandTypes(DiscordApplicationCommandType.UserContextMenu)]
         [AllowedProcessors(typeof(UserCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task ShowNotes(UserCommandContext ctx, DiscordUser targetUser)
         {
             await ctx.RespondAsync(embed: await UserNoteHelpers.GenerateUserNotesEmbedAsync(targetUser), ephemeral: true);
@@ -83,6 +87,21 @@
                         break;
                 }
             }
+        }
+
+        [Command("Remind Me About This")]
+        [AllowedProcessors(typeof(MessageCommandProcessor))]
+        [SlashCommandTypes(DiscordApplicationCommandType.MessageContextMenu)]
+
+        public static async Task ContextReminder(MessageCommandContext ctx, DiscordMessage targetMessage)
+        {
+            await ctx.RespondWithModalAsync(new DiscordModalBuilder()
+                .WithTitle("Remind Me About This")
+                .WithCustomId("remind-me-about-this-modal-callback")
+                .AddTextInput(new DiscordTextInputComponent("remind-me-about-this-time-input"), "When do you want to be reminded?")
+            );
+
+            ReminderInteractionCache[ctx.User.Id] = targetMessage;
         }
     }
 }

@@ -10,7 +10,7 @@
         [Command("clear")]
         [Description("Delete many messages from the current channel.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ManageMessages, DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(permissions: DiscordPermission.ManageMessages)]
         public async Task ClearSlashCommand(SlashCommandContext ctx,
             [Parameter("count"), Description("The number of messages to consider for deletion. Required if you don't use the 'up_to' argument.")] long count = 0,
             [Parameter("up_to"), Description("Optionally delete messages up to (not including) this one. Accepts IDs and links.")] string upTo = "",
@@ -180,12 +180,8 @@
                 {
                     foreach (var message in messagesForChannel.Value)
                     {
-                        DiscordMember member;
-                        try
-                        {
-                            member = await ctx.Guild.GetMemberAsync(message.Author.Id);
-                        }
-                        catch (DSharpPlus.Exceptions.NotFoundException)
+                        var member = await ctx.Guild.CheckAndGetMemberAsync(message.Author.Id);
+                        if (member is null)
                         {
                             // User is not in the server, so they can't be a current mod
                             continue;

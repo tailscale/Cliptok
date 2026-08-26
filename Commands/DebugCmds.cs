@@ -4,10 +4,62 @@ namespace Cliptok.Commands
     [TextAlias("debug", "troubleshoot", "unbug", "bugn't", "helpsomethinghasgoneverywrong")]
     [Description("Commands and things for fixing the bot in the unlikely event that it breaks a bit.")]
     [AllowedProcessors(typeof(TextCommandProcessor))]
-    [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator)]
+    [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
     public class DebugCmds
     {
         public static Dictionary<ulong, PendingUserOverride> OverridesPendingAddition = new();
+
+        [Command("membercache")]
+        [TextAlias("404cache")]
+        [IsBotOwner]
+        public class MemberCache
+        {
+            [DefaultGroupCommand]
+            [Command("list")]
+            [Description("Lists the members known to not be in the server.")]
+            public static async Task ListMemberCache(TextCommandContext ctx)
+            {
+                if (DiscordGuildExtensions.UsersNotInServerCache.Count < 1)
+                {
+                    await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} The cache is empty!");
+                    return;
+                }
+
+                var list = (await StringHelpers.CodeOrHasteBinAsync(string.Join("\n",
+                    DiscordGuildExtensions.UsersNotInServerCache.Select(userId => $"{userId} <@{userId}>")), noCode: true)).Text;
+
+                await ctx.RespondAsync(new DiscordMessageBuilder()
+                    .WithContent(list)
+                    .WithAllowedMentions(Mentions.None));
+            }
+
+            [Command("check")]
+            [Description("Check whether a member is known to not be in the server.")]
+            public static async Task CheckMemberCache(TextCommandContext ctx, DiscordUser user)
+            {
+                var isInCache = DiscordGuildExtensions.UsersNotInServerCache.Contains(user.Id);
+                if (isInCache)
+                    await ctx.RespondAsync($"{Program.cfgjson.Emoji.Success} {user.Mention} is in the cache (they are not in the server).");
+                else
+                    await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} {user.Mention} is not in the cache (they might be in the server).");
+            }
+
+            [Command("clear")]
+            [TextAlias("purge", "erase")]
+            [Description("Clears the cache of members known to not be in the server.")]
+            public static async Task ClearMemberCache(TextCommandContext ctx)
+            {
+                if (DiscordGuildExtensions.UsersNotInServerCache.Count < 1)
+                {
+                    await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} The cache is already empty!");
+                }
+                else
+                {
+                    DiscordGuildExtensions.UsersNotInServerCache = [];
+                    await ctx.RespondAsync($"{Program.cfgjson.Emoji.Success} Cache cleared!");   
+                }
+            }
+        }
 
         [Command("logprint")]
         public async Task LogPrint(TextCommandContext ctx)
@@ -212,7 +264,7 @@ namespace Cliptok.Commands
         [Command("dumpwarnings"), Description("Dump all warning data. EXTREMELY computationally expensive, use with caution.")]
         [IsBotOwner]
         [RequireHomeserverPerm(ServerPermLevel.Moderator)]
-        public async Task MostWarningsCmd(TextCommandContext ctx)
+        public async Task DumpWarningsCmd(TextCommandContext ctx)
         {
             await DiscordHelpers.SafeTyping(ctx.Channel);
 
@@ -382,7 +434,7 @@ namespace Cliptok.Commands
         }
 
         [Command("bancache")]
-        [Description("Dump the most recent manual warning")]
+        [Description("Dump the most recent manual ban")]
         public async Task BanCacheCmd(TextCommandContext ctx)
         {
             if (BanHelpers.MostRecentBan is null)
@@ -395,7 +447,7 @@ namespace Cliptok.Commands
 
 
         [Command("mutecache")]
-        [Description("Dump the most recent manual warning")]
+        [Description("Dump the most recent manual mute")]
         public async Task MuteCacheCmd(TextCommandContext ctx)
         {
             if (MuteHelpers.MostRecentMute is null)
@@ -590,12 +642,8 @@ namespace Cliptok.Commands
                 var msg = await ctx.GetResponseAsync();
 
                 // Try fetching member to determine whether they are in the server. If they are not, we can't apply overrides for them.
-                DiscordMember member;
-                try
-                {
-                    member = await ctx.Guild.GetMemberAsync(user.Id);
-                }
-                catch (DSharpPlus.Exceptions.NotFoundException)
+                var member = await ctx.Guild.CheckAndGetMemberAsync(user.Id);
+                if (member is null)
                 {
                     await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} That user isn't in the server! I can't apply overrides for them.");
                     return;

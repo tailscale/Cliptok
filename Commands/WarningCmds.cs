@@ -7,8 +7,7 @@ namespace Cliptok.Commands
         [Command("warn")]
         [Description("Formally warn a user, usually for breaking the server rules.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
-        [RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task WarnSlashCommand(SlashCommandContext ctx,
          [Parameter("user"), Description("The user to warn.")] DiscordUser user,
          [Parameter("reason"), Description("The reason they're being warned.")] string reason,
@@ -52,7 +51,7 @@ namespace Cliptok.Commands
 
             try
             {
-                targetMember = await ctx.Guild.GetMemberAsync(user.Id);
+                targetMember = await ctx.Guild.CheckAndGetMemberAsync(user.Id);
                 if ((await GetPermLevelAsync(ctx.Member)) == ServerPermLevel.TrialModerator && ((await GetPermLevelAsync(targetMember)) >= ServerPermLevel.TrialModerator || targetMember.IsBot))
                 {
                     webhookOut = new DiscordWebhookBuilder().WithContent($"{Program.cfgjson.Emoji.Error} As a Junior Moderator you cannot perform moderation actions on other staff members or bots.");
@@ -164,175 +163,10 @@ namespace Cliptok.Commands
             return list;
         }
 
-        [Command("warndetails")]
-        [Description("Search for a warning and return its details.")]
-        [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
-        public async Task WarndetailsSlashCommand(SlashCommandContext ctx,
-            [Parameter("user"), Description("The user to fetch a warning for.")] DiscordUser user,
-            [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider)), Parameter("warning"), Description("Type to search! Find the warning you want to fetch.")] string warning,
-            [Parameter("public"), Description("Whether to show the output publicly.")] bool publicWarnings = false
-        )
-        {
-            if (warning.Contains(' '))
-            {
-                warning = warning.Split(' ')[0];
-            }
-
-            long warnId;
-            try
-            {
-                warnId = Convert.ToInt64(warning);
-            }
-            catch
-            {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} Looks like your warning option was invalid! Give it another go?", ephemeral: true);
-                return;
-            }
-
-            UserWarning warningObject = GetWarning(user.Id, warnId);
-
-            if (warningObject is null)
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.", ephemeral: true);
-            else if (warningObject.Type == WarningType.Note)
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} That's a note, not a warning! Try using `/note details` instead, or make sure you've got the right warning ID.", ephemeral: true);
-            else
-            {
-                await ctx.DeferResponseAsync(ephemeral: !publicWarnings);
-                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().AddEmbed(await FancyWarnEmbedAsync(warningObject, true, userID: user.Id)));
-            }
-        }
-
-        [Command("delwarn")]
-        [Description("Search for a warning and delete it!")]
-        [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
-        public async Task DelwarnSlashCommand(SlashCommandContext ctx,
-            [Parameter("user"), Description("The user to delete a warning for.")] DiscordUser targetUser,
-            [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider))][Parameter("warning"), Description("Type to search! Find the warning you want to delete.")] string warningId,
-            [Parameter("public"), Description("Whether to show the output publicly. Default: false")] bool showPublic = false
-        )
-        {
-            if (warningId.Contains(' '))
-            {
-                warningId = warningId.Split(' ')[0];
-            }
-
-            long warnId;
-            try
-            {
-                warnId = Convert.ToInt64(warningId);
-            }
-            catch
-            {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} Looks like your warning option was invalid! Give it another go?", ephemeral: true);
-                return;
-            }
-
-            UserWarning warning = GetWarning(targetUser.Id, warnId);
-
-            if (warning is null)
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.", ephemeral: true);
-            else if (warning.Type == WarningType.Note)
-            {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} That's a note, not a warning! Try using `/note delete` instead, or make sure you've got the right warning ID.", ephemeral: true);
-            }
-            else if ((await GetPermLevelAsync(ctx.Member)) == ServerPermLevel.TrialModerator && warning.ModUserId != ctx.User.Id && warning.ModUserId != ctx.Client.CurrentUser.Id)
-            {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} {ctx.User.Mention}, as a Junior Moderator you cannot edit or delete warnings that aren't issued by you or the bot!", ephemeral: true);
-            }
-            else
-            {
-                await ctx.DeferResponseAsync(ephemeral: !showPublic);
-
-                bool success = await DelWarningAsync(warning, targetUser.Id);
-                if (success)
-                {
-                    await LogChannelHelper.LogMessageAsync("mod",
-                        new DiscordMessageBuilder()
-                            .WithContent($"{Program.cfgjson.Emoji.Deleted} Warning deleted:" +
-                            $"`{StringHelpers.Pad(warnId)}` (belonging to {targetUser.Mention}, deleted by {ctx.Member.Mention})")
-                            .AddEmbed(await FancyWarnEmbedAsync(warning, true, 0xf03916, true, targetUser.Id))
-                            .WithAllowedMentions(Mentions.None)
-                    );
-
-                    await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent($"{Program.cfgjson.Emoji.Deleted} Successfully deleted warning `{StringHelpers.Pad(warnId)}` (belonging to {targetUser.Mention})"));
-
-
-                }
-                else
-                {
-                    await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} Failed to delete warning `{StringHelpers.Pad(warnId)}` from {targetUser.Mention}!\nPlease contact the bot author.", ephemeral: true);
-                }
-            }
-        }
-
-        [Command("editwarn")]
-        [Description("Search for a warning and edit it!")]
-        [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
-        public async Task EditWarnSlashCommand(SlashCommandContext ctx,
-            [Parameter("user"), Description("The user to fetch a warning for.")] DiscordUser user,
-            [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider))][Parameter("warning"), Description("Type to search! Find the warning you want to edit.")] string warning,
-            [Parameter("new_reason"), Description("The new reason for the warning")] string reason,
-            [Parameter("public"), Description("Whether to show the output publicly. Default: false")] bool showPublic = false)
-        {
-            if (warning.Contains(' '))
-            {
-                warning = warning.Split(' ')[0];
-            }
-
-            long warnId;
-            try
-            {
-                warnId = Convert.ToInt64(warning);
-            }
-            catch
-            {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} Looks like your warning option was invalid! Give it another go?", ephemeral: true);
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(reason))
-            {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} You haven't given a new reason to set for the warning!", ephemeral: true);
-                return;
-            }
-
-            var warningObject = GetWarning(user.Id, warnId);
-
-            if (warningObject is null)
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.", ephemeral: true);
-            else if (warningObject.Type == WarningType.Note)
-            {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} That's a note, not a warning! Try using `/note edit` instead, or make sure you've got the right warning ID.", ephemeral: true);
-            }
-            else if ((await GetPermLevelAsync(ctx.Member)) == ServerPermLevel.TrialModerator && warningObject.ModUserId != ctx.User.Id && warningObject.ModUserId != ctx.Client.CurrentUser.Id)
-            {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} {ctx.User.Mention}, as a Junior Moderator you cannot edit or delete warnings that aren't issued by you or the bot!", ephemeral: true);
-            }
-            else
-            {
-                await ctx.DeferResponseAsync(ephemeral: !showPublic);
-
-                await EditWarning(user, warnId, ctx.User, reason);
-
-                await LogChannelHelper.LogMessageAsync("mod",
-                    new DiscordMessageBuilder()
-                        .WithContent($"{Program.cfgjson.Emoji.Information} Warning edited:" +
-                        $"`{StringHelpers.Pad(warnId)}` (belonging to {user.Mention})")
-                        .AddEmbed(await FancyWarnEmbedAsync(GetWarning(user.Id, warnId), true, userID: user.Id))
-                );
-
-                await ctx.FollowupAsync(new DiscordFollowupMessageBuilder().WithContent($"{Program.cfgjson.Emoji.Information} Successfully edited warning `{StringHelpers.Pad(warnId)}` (belonging to {user.Mention})")
-                    .AddEmbed(await FancyWarnEmbedAsync(GetWarning(user.Id, warnId), userID: user.Id)));
-            }
-        }
-        
         [Command("pardon")]
         [Description("Pardon a warning.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task PardonSlashCommand(SlashCommandContext ctx,
             [Parameter("user"), Description("The user to pardon a warning for.")] DiscordUser user,
             [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider))][Parameter("warning"), Description("Type to search! Find the warning you want to pardon.")] string warning,
@@ -394,7 +228,7 @@ namespace Cliptok.Commands
         [Command("unpardon")]
         [Description("Unpardon a warning.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task UnpardonSlashCommand(SlashCommandContext ctx,
             [Parameter("user"), Description("The user to unpardon a warning for.")] DiscordUser user,
             [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider))][Parameter("warning"), Description("Type to search! Find the warning you want to unpardon.")] string warning,
@@ -492,7 +326,7 @@ namespace Cliptok.Commands
             DiscordMember targetMember;
             try
             {
-                targetMember = await ctx.Guild.GetMemberAsync(targetUser.Id);
+                targetMember = await ctx.Guild.CheckAndGetMemberAsync(targetUser.Id);
                 if ((await GetPermLevelAsync(ctx.Member)) == ServerPermLevel.TrialModerator && ((await GetPermLevelAsync(targetMember)) >= ServerPermLevel.TrialModerator || targetMember.IsBot))
                 {
                     await ctx.Channel.SendMessageAsync($"{Program.cfgjson.Emoji.Error} {ctx.User.Mention}, as a Junior Moderator you cannot perform moderation actions on other staff members or bots.");
@@ -567,7 +401,7 @@ namespace Cliptok.Commands
             DiscordMember targetMember;
             try
             {
-                targetMember = await ctx.Guild.GetMemberAsync(targetUser.Id);
+                targetMember = await ctx.Guild.CheckAndGetMemberAsync(targetUser.Id);
                 if ((await GetPermLevelAsync(ctx.Member)) == ServerPermLevel.TrialModerator && ((await GetPermLevelAsync(targetMember)) >= ServerPermLevel.TrialModerator || targetMember.IsBot))
                 {
                     await ctx.Channel.SendMessageAsync($"{Program.cfgjson.Emoji.Error} {ctx.User.Mention}, as a Junior Moderator you cannot perform moderation actions on other staff members or bots.");
@@ -609,35 +443,38 @@ namespace Cliptok.Commands
         }
 
         [
-            Command("delwarntextcmd"),
-            TextAlias("delwarn", "delwarm", "delwam", "deletewarn", "delwarning", "deletewarning"),
+            Command("delwarn"),
+            TextAlias("delwarm", "delwam", "deletewarn", "delwarning", "deletewarning"),
             Description("Delete a warning that was issued by mistake or later became invalid."),
-            AllowedProcessors(typeof(TextCommandProcessor)),
+            AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor)),
             HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator)
         ]
         public async Task DelwarnCmd(
-            TextCommandContext ctx,
-            [Description("The user you're removing a warning from. Should be a mention or ID..")] DiscordUser targetUser,
-            [Description("The ID of the warning you want to delete.")] long warnId
+            CommandContext ctx,
+            [Parameter("user"), Description("The user you're removing a warning from. Should be a mention or ID..")] DiscordUser targetUser,
+            [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider))][Parameter("warning"), Description("The ID of the warning you want to delete.")] long warnId,
+            [Parameter("public"), Description("Whether to show the output publicly. Default: false")] bool showPublic = false
         )
         {
+            await ctx.RespondAsync($"{Program.cfgjson.Emoji.Loading} Processing your request...", ephemeral: !showPublic);
+
             UserWarning warning = GetWarning(targetUser.Id, warnId);
             if (warning is null)
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.");
+                await ctx.EditResponseAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.");
             else if (warning.Type == WarningType.Note)
             {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} That's a note, not a warning! Try using `/note delete` instead, or make sure you've got the right warning ID.");
+                await ctx.EditResponseAsync($"{Program.cfgjson.Emoji.Error} That's a note, not a warning! Try using `/note delete` instead, or make sure you've got the right warning ID.");
             }
             else if ((await GetPermLevelAsync(ctx.Member)) == ServerPermLevel.TrialModerator && warning.ModUserId != ctx.User.Id && warning.ModUserId != ctx.Client.CurrentUser.Id)
             {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} {ctx.User.Mention}, as a Junior Moderator you cannot edit or delete warnings that aren't issued by you or the bot!");
+                await ctx.EditResponseAsync($"{Program.cfgjson.Emoji.Error} {ctx.User.Mention}, as a Junior Moderator you cannot edit or delete warnings that aren't issued by you or the bot!");
             }
             else
             {
                 bool success = await DelWarningAsync(warning, targetUser.Id);
                 if (success)
                 {
-                    await ctx.RespondAsync($"{Program.cfgjson.Emoji.Deleted} Successfully deleted warning `{StringHelpers.Pad(warnId)}` (belonging to {targetUser.Mention})");
+                    await ctx.EditResponseAsync($"{Program.cfgjson.Emoji.Deleted} Successfully deleted warning `{StringHelpers.Pad(warnId)}` (belonging to {targetUser.Mention})");
 
                     await LogChannelHelper.LogMessageAsync("mod",
                         new DiscordMessageBuilder()
@@ -649,97 +486,99 @@ namespace Cliptok.Commands
                 }
                 else
                 {
-                    await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} Failed to delete warning `{StringHelpers.Pad(warnId)}` from {targetUser.Mention}!\nPlease contact the bot author.");
+                    await ctx.EditResponseAsync($"{Program.cfgjson.Emoji.Error} Failed to delete warning `{StringHelpers.Pad(warnId)}` from {targetUser.Mention}!\nPlease contact the bot author.");
                 }
             }
         }
 
         [
-            Command("warnlookuptextcmd"),
+            Command("warnlookup"),
             Description("Looks up information about a warning. Shows only publicly available information."),
             TextAlias("warnlookup", "warning", "warming", "waming", "wamming", "lookup", "lookylooky", "peek", "investigate", "what-did-i-do-wrong-there", "incident"),
             SilentMode,
-            AllowedProcessors(typeof(TextCommandProcessor)),
+            AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor)),
             HomeServer
         ]
         public async Task WarnlookupCmd(
-            TextCommandContext ctx,
-            [Description("The user you're looking at a warning for. Should be a mention or ID..")] DiscordUser targetUser,
-            [Description("The ID of the warning you want to see")] long warnId
+            CommandContext ctx,
+            [Parameter("user"), Description("The user you're looking at a warning for. Should be a mention or ID.")] DiscordUser targetUser,
+            [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider))][Parameter("warning"), Description("The ID of the warning you want to see")] long warnId,
+            [Parameter("public"), Description("Whether to show the output publicly.")] bool publicWarnings = false
         )
         {
             UserWarning warning = GetWarning(targetUser.Id, warnId);
             if (warning is null || warning.Type == WarningType.Note)
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.");
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.", ephemeral: true);
             else
-                await ctx.RespondAsync(null, await FancyWarnEmbedAsync(warning, userID: targetUser.Id));
+                await ctx.RespondAsync(null, await FancyWarnEmbedAsync(warning, userID: targetUser.Id), ephemeral: !publicWarnings);
         }
 
         [
-            Command("warndetailstextcmd"),
-            TextAlias("warndetails", "warninfo", "waminfo", "wamdetails", "warndetail", "wamdetail"),
-            Description("Check the details of a warning in depth. Shows extra information (Such as responsible Mod) that may not be wanted to be public."),
-            AllowedProcessors(typeof(TextCommandProcessor)),
+            Command("warndetails"),
+            TextAlias("warninfo", "waminfo", "wamdetails", "warndetail", "wamdetail"),
+            Description("Check the details of a warning in depth. Shows extra information that may be private."),
+            AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor)),
             HomeServer,
             RequireHomeserverPerm(ServerPermLevel.TrialModerator)
         ]
         public async Task WarnDetailsCmd(
-            TextCommandContext ctx,
-            [Description("The user you're looking up detailed warn information for. Should be a mention or ID..")] DiscordUser targetUser,
-            [Description("The ID of the warning you're looking at in detail.")] long warnId
+            CommandContext ctx,
+            [Parameter("user"), Description("The user you're looking up detailed warn information for. Should be a mention or ID.")] DiscordUser targetUser,
+            [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider))][Parameter("warning"), Description("The warning you're looking at in detail.")] long warnId,
+            [Parameter("public"), Description("Whether to show the output publicly.")] bool publicWarnings = false
+            
         )
         {
             UserWarning warning = GetWarning(targetUser.Id, warnId);
 
             if (warning is null)
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.");
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.", ephemeral: true);
             else if (warning.Type == WarningType.Note)
             {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} That's a note, not a warning! Try using `/note details` instead, or make sure you've got the right warning ID.");
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} That's a note, not a warning! Try using `/note details` instead, or make sure you've got the right warning ID.", ephemeral: true);
             }
             else
-                await ctx.RespondAsync(null, await FancyWarnEmbedAsync(warning, true, userID: targetUser.Id));
+                await ctx.RespondAsync(null, await FancyWarnEmbedAsync(warning, true, userID: targetUser.Id), ephemeral: !publicWarnings);
 
         }
 
         [
-            Command("editwarntextcmd"),
-            TextAlias("editwarn", "warnedit", "editwarning"),
-            Description("Edit the reason of an existing warning.\n" +
-                "The Moderator who is editing the reason will become responsible for the case."),
-            AllowedProcessors(typeof(TextCommandProcessor)),
+            Command("editwarn"),
+            TextAlias("warnedit", "editwarning"),
+            Description("Edit the reason of an existing warning."),
+            AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor)),
             HomeServer,
             RequireHomeserverPerm(ServerPermLevel.TrialModerator)
         ]
         public async Task EditwarnCmd(
-            TextCommandContext ctx,
-            [Description("The user you're editing a warning for. Should be a mention or ID..")] DiscordUser targetUser,
-            [Description("The ID of the warning you want to edit.")] long warnId,
-            [RemainingText, Description("The new reason for the warning.")] string newReason)
+            CommandContext ctx,
+            [Parameter("user"), Description("The user you're editing a warning for. Should be a mention or ID..")] DiscordUser targetUser,
+            [SlashAutoCompleteProvider(typeof(WarningsAutocompleteProvider))][Parameter("warning"), Description("The warning you want to edit.")] long warnId,
+            [Parameter("new_reason"), RemainingText, Description("The new reason for the warning.")] string newReason,
+            [Parameter("public"), Description("Whether to show the output publicly. Default: false")] bool showPublic = false)
         {
             if (string.IsNullOrWhiteSpace(newReason))
             {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} You haven't given a new reason to set for the warning!");
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} You haven't given a new reason to set for the warning!", ephemeral: true);
                 return;
             }
 
-            await ctx.RespondAsync("Processing your request...");
-            var msg = await ctx.GetResponseAsync();
+            await ctx.RespondAsync($"{Program.cfgjson.Emoji.Loading} Processing your request...", ephemeral: !showPublic);
             var warning = GetWarning(targetUser.Id, warnId);
             if (warning is null)
-                await msg.ModifyAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.");
+                await ctx.EditResponseAsync($"{Program.cfgjson.Emoji.Error} I couldn't find a warning for that user with that ID! Please check again.");
             else if (warning.Type == WarningType.Note)
             {
-                await msg.ModifyAsync($"{Program.cfgjson.Emoji.Error} That's a note, not a warning! Try using `/note edit` instead, or make sure you've got the right warning ID.");
+                await ctx.EditResponseAsync($"{Program.cfgjson.Emoji.Error} That's a note, not a warning! Try using `/note edit` instead, or make sure you've got the right warning ID.");
             }
             else if ((await GetPermLevelAsync(ctx.Member)) == ServerPermLevel.TrialModerator && warning.ModUserId != ctx.User.Id && warning.ModUserId != ctx.Client.CurrentUser.Id)
             {
-                await msg.ModifyAsync($"{Program.cfgjson.Emoji.Error} {ctx.User.Mention}, as a Junior Moderator you cannot edit or delete warnings that aren't issued by you or the bot!");
+                await ctx.EditResponseAsync($"{Program.cfgjson.Emoji.Error} {ctx.User.Mention}, as a Junior Moderator you cannot edit or delete warnings that aren't issued by you or the bot!");
             }
             else
             {
                 await EditWarning(targetUser, warnId, ctx.User, newReason);
-                await msg.ModifyAsync($"{Program.cfgjson.Emoji.Information} Successfully edited warning `{StringHelpers.Pad(warnId)}` (belonging to {targetUser.Mention})",
+                await ctx.EditResponseAsync($"{Program.cfgjson.Emoji.Information} Successfully edited warning `{StringHelpers.Pad(warnId)}` (belonging to {targetUser.Mention})",
                     await FancyWarnEmbedAsync(GetWarning(targetUser.Id, warnId), userID: targetUser.Id));
 
                 await LogChannelHelper.LogMessageAsync("mod",
@@ -751,14 +590,15 @@ namespace Cliptok.Commands
             }
         }
 
-        [Command("mostwarningstextcmd")]
-        [TextAlias("mostwarnings")]
+        [Command("mostwarnings")]
         [Description("Who has the most warnings???")]
-        [AllowedProcessors(typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
-        public async Task MostWarningsCmd(TextCommandContext ctx)
+        [AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor))]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
+        public async Task MostWarningsCmd(CommandContext ctx)
         {
-            await DiscordHelpers.SafeTyping(ctx.Channel);
+            await ctx.DeferResponseAsync();
+            if (ctx is TextCommandContext)
+                await DiscordHelpers.SafeTyping(ctx.Channel);
 
             var server = Program.redisConnection.GetServer(Program.redisConnection.GetEndPoints()[0]);
             var keys = server.Keys();
@@ -785,14 +625,15 @@ namespace Cliptok.Commands
             await ctx.RespondAsync($":thinking: The user with the most warnings is **{DiscordHelpers.UniqueUsername(user)}** with a total of **{myList.Last().Value} warnings!**\nThis includes users who have left or been banned.");
         }
 
-        [Command("mostwarningsdaytextcmd")]
-        [TextAlias("mostwarningsday")]
+        [Command("mostwarningsday")]
         [Description("Which day has the most warnings???")]
-        [AllowedProcessors(typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
-        public async Task MostWarningsDayCmd(TextCommandContext ctx)
+        [AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor))]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
+        public async Task MostWarningsDayCmd(CommandContext ctx)
         {
-            await DiscordHelpers.SafeTyping(ctx.Channel);
+            await ctx.DeferResponseAsync();
+            if (ctx is TextCommandContext)
+                await DiscordHelpers.SafeTyping(ctx.Channel);
 
             var server = Program.redisConnection.GetServer(Program.redisConnection.GetEndPoints()[0]);
             var keys = server.Keys();
@@ -859,9 +700,10 @@ namespace Cliptok.Commands
                 $"\nExcluding automatic warnings, the most was on **{noAutoCountList.Last().Key}** with a total of **{noAutoCountList.Last().Value}** warnings!");
         }
 
-        [Command("revoke"), Description("Revoke a warning. Reply to the chat message for the warning to revoke when using this!")]
-        [TextAlias("undo")]
-        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
+        [Command("revoke")]
+        [Description("Revoke a warning. Reply to the chat message for the warning to revoke when using this!")]
+        [TextAlias("undo", "delete", "remove")]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task RevokeWarningCommand(TextCommandContext ctx)
         {
             await ctx.RespondAsync($"{Program.cfgjson.Emoji.Loading} Working on it...");

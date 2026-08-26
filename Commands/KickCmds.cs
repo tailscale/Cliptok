@@ -6,7 +6,7 @@ namespace Cliptok.Commands
         [TextAlias("yeet", "shoo", "goaway", "defenestrate")]
         [Description("Kicks a user, removing them from the server until they rejoin.")]
         [AllowedProcessors(typeof(SlashCommandProcessor), typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(DiscordPermission.KickMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(permissions: DiscordPermission.KickMembers)]
         public async Task KickCmd(CommandContext ctx, [Parameter("user"), Description("The user you want to kick from the server.")] DiscordUser target, [Parameter("reason"), Description("The reason for kicking this user."), RemainingText] string reason = "No reason specified.")
         {
             if (target.IsBot)
@@ -20,12 +20,8 @@ namespace Cliptok.Commands
 
             reason = reason.Replace("`", "\\`").Replace("*", "\\*");
 
-            DiscordMember member;
-            try
-            {
-                member = await ctx.Guild.GetMemberAsync(target.Id);
-            }
-            catch
+            var member = await ctx.Guild.CheckAndGetMemberAsync(target.Id);
+            if (member is null)
             {
                 await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} That user doesn't appear to be in the server!");
                 return;
@@ -33,7 +29,7 @@ namespace Cliptok.Commands
 
             if (DiscordHelpers.AllowedToMod(ctx.Member, member))
             {
-                if (DiscordHelpers.AllowedToMod(await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id), member))
+                if (DiscordHelpers.AllowedToMod(await ctx.Guild.CheckAndGetMemberAsync(ctx.Client.CurrentUser.Id), member))
                 {
                     await KickHelpers.KickAndLogAsync(member, reason, ctx.Member);
                     await ctx.Channel.SendMessageAsync($"{Program.cfgjson.Emoji.Ejected} {target.Mention} has been kicked: **{reason}**");

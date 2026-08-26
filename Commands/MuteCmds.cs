@@ -5,8 +5,7 @@ namespace Cliptok.Commands
         [Command("mute")]
         [Description("Mute a user, temporarily or permanently.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
-        [RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(permissions: DiscordPermission.ModerateMembers)]
         public async Task MuteSlashCommand(
             SlashCommandContext ctx,
             [Parameter("user"), Description("The user you wish to mute.")] DiscordUser targetUser,
@@ -42,15 +41,7 @@ namespace Cliptok.Commands
             };
 
             await ctx.DeferResponseAsync(ephemeral: true);
-            DiscordMember targetMember = default;
-            try
-            {
-                targetMember = await ctx.Guild.GetMemberAsync(targetUser.Id);
-            }
-            catch (DSharpPlus.Exceptions.NotFoundException)
-            {
-                // is this worth logging?
-            }
+            var targetMember = await ctx.Guild.CheckAndGetMemberAsync(targetUser.Id);
 
             if (targetMember != default && (await GetPermLevelAsync(ctx.Member)) == ServerPermLevel.TrialModerator && ((await GetPermLevelAsync(targetMember)) >= ServerPermLevel.TrialModerator || targetMember.IsBot))
             {
@@ -80,8 +71,7 @@ namespace Cliptok.Commands
         [Command("muteinfo")]
         [Description("Show information about the mute for a user.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
-        [RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(permissions: DiscordPermission.ModerateMembers)]
         public async Task MuteInfoSlashCommand(
             SlashCommandContext ctx,
             [Parameter("user"), Description("The user whose mute information to show.")] DiscordUser targetUser,
@@ -94,8 +84,7 @@ namespace Cliptok.Commands
         [TextAlias("umute")]
         [Description("Unmutes a previously muted user, typically ahead of the standard expiration time. See also: mute")]
         [AllowedProcessors(typeof(SlashCommandProcessor), typeof(TextCommandProcessor))]
-        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
-        [RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(permissions: DiscordPermission.ModerateMembers)]
         public async Task UnmuteCmd(CommandContext ctx, [Parameter("user"), Description("The user you're trying to unmute.")] DiscordUser targetUser, [Parameter("reason"), Description("The reason for the unmute."), RemainingText] string reason = "No reason specified.")
         {
             if (ctx is SlashCommandContext)
@@ -107,15 +96,9 @@ namespace Cliptok.Commands
             if (Program.cfgjson.TqsMutedRole != 0)
                 tqsMutedRole = await ctx.Guild.GetRoleAsync(Program.cfgjson.TqsMutedRole);
 
-            DiscordMember member = default;
-            try
-            {
-                member = await ctx.Guild.GetMemberAsync(targetUser.Id);
-            }
-            catch (DSharpPlus.Exceptions.NotFoundException ex)
-            {
-                Program.discord.Logger.LogWarning(eventId: Program.CliptokEventID, exception: ex, message: "Failed to unmute {user} in {server} because they weren't in the server.", $"{DiscordHelpers.UniqueUsername(targetUser)}", ctx.Guild.Name);
-            }
+            var member = await ctx.Guild.CheckAndGetMemberAsync(targetUser.Id);
+            if (member is null)
+                Program.discord.Logger.LogWarning(eventId: Program.CliptokEventID, message: "Failed to unmute user {user} in {server} because they weren't in the server.", targetUser.Id, ctx.Guild.Name);
 
             if ((await Program.redis.HashExistsAsync("mutes", targetUser.Id)) || (member != default && (member.Roles.Contains(mutedRole) || member.Roles.Contains(tqsMutedRole))))
             {
@@ -149,7 +132,7 @@ namespace Cliptok.Commands
         [TextAlias("mute")]
         [Description("Mutes a user, preventing them from sending messages until they're unmuted. See also: unmute")]
         [AllowedProcessors(typeof(TextCommandProcessor))]
-        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(permissions: DiscordPermission.ModerateMembers)]
         public async Task MuteCmd(
             TextCommandContext ctx, [Description("The user you're trying to mute")] DiscordUser targetUser,
             [RemainingText, Description("Combined argument for the time and reason for the mute. For example '1h rule 7' or 'rule 10'")] string timeAndReason = "No reason specified."
@@ -179,15 +162,7 @@ namespace Cliptok.Commands
                 Stub = true
             };
 
-            DiscordMember targetMember = default;
-            try
-            {
-                targetMember = await ctx.Guild.GetMemberAsync(targetUser.Id);
-            }
-            catch (DSharpPlus.Exceptions.NotFoundException)
-            {
-                // is this worth logging?
-            }
+            var targetMember = await ctx.Guild.CheckAndGetMemberAsync(targetUser.Id);
 
             if (targetMember != default && ((await GetPermLevelAsync(ctx.Member))) == ServerPermLevel.TrialModerator && ((await GetPermLevelAsync(targetMember)) >= ServerPermLevel.TrialModerator || targetMember.IsBot))
             {
@@ -227,7 +202,7 @@ namespace Cliptok.Commands
         [Command("editmutetextcmd")]
         [TextAlias("editmute")]
         [Description("Edit the details of a mute. Updates the DM to the user, among other things.")]
-        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(permissions: DiscordPermission.ModerateMembers)]
         [AllowedProcessors(typeof(TextCommandProcessor))]
         public async Task EditMuteCmd(TextCommandContext ctx,
             [Description("The user you wish to edit the mute of. Accepts many formats")] DiscordUser targetUser,
@@ -292,7 +267,7 @@ namespace Cliptok.Commands
 
             try
             {
-                var targetMember = await guild.GetMemberAsync(targetUser.Id);
+                var targetMember = await guild.CheckAndGetMemberAsync(targetUser.Id);
                 await targetMember.TimeoutAsync(mute.ExpireTime + TimeSpan.FromSeconds(10), mute.Reason);
             }
             catch (Exception e)

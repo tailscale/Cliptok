@@ -7,7 +7,7 @@ namespace Cliptok.Commands
         [Command("ban")]
         [Description("Bans a user from the server, either permanently or temporarily.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(DiscordPermission.BanMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(permissions: DiscordPermission.BanMembers)]
         public async Task BanSlashCommand(SlashCommandContext ctx,
             [Parameter("user"), Description("The user to ban")] DiscordUser user,
             [Parameter("reason"), Description("The reason the user is being banned")] string reason,
@@ -65,7 +65,7 @@ namespace Cliptok.Commands
 
             try
             {
-                targetMember = await ctx.Guild.GetMemberAsync(user.Id);
+                targetMember = await ctx.Guild.CheckAndGetMemberAsync(user.Id);
                 if ((await GetPermLevelAsync(ctx.Member)) == ServerPermLevel.TrialModerator && ((await GetPermLevelAsync(targetMember)) >= ServerPermLevel.TrialModerator))
                 {
                     webhookOut.Content = $"{Program.cfgjson.Emoji.Error} As a Junior Moderator you cannot perform moderation actions on other staff members.";
@@ -102,7 +102,7 @@ namespace Cliptok.Commands
             DiscordMember member;
             try
             {
-                member = await ctx.Guild.GetMemberAsync(user.Id);
+                member = await ctx.Guild.CheckAndGetMemberAsync(user.Id);
             }
             catch
             {
@@ -120,7 +120,7 @@ namespace Cliptok.Commands
             {
                 if (DiscordHelpers.AllowedToMod(ctx.Member, member))
                 {
-                    if (DiscordHelpers.AllowedToMod(await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id), member))
+                    if (DiscordHelpers.AllowedToMod(await ctx.Guild.CheckAndGetMemberAsync(ctx.Client.CurrentUser.Id), member))
                     {
                         if (userAlreadyBanned)
                             await BanHelpers.EditBanAsync(user.Id, ctx.User.Id, banDuration, reason, appealable);
@@ -178,8 +178,7 @@ namespace Cliptok.Commands
         [Command("baninfo")]
         [Description("Show information about the ban for a user.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
-        [RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task BanInfoSlashCommand(
             SlashCommandContext ctx,
             [Parameter("user"), Description("The user whose ban information to show.")] DiscordUser targetUser,
@@ -265,7 +264,7 @@ namespace Cliptok.Commands
             DiscordMember member;
             try
             {
-                member = await ctx.Guild.GetMemberAsync(targetMember.Id);
+                member = await ctx.Guild.CheckAndGetMemberAsync(targetMember.Id);
             }
             catch
             {
@@ -289,7 +288,7 @@ namespace Cliptok.Commands
             {
                 if (DiscordHelpers.AllowedToMod(ctx.Member, member))
                 {
-                    if (DiscordHelpers.AllowedToMod(await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id), member))
+                    if (DiscordHelpers.AllowedToMod(await ctx.Guild.CheckAndGetMemberAsync(ctx.Client.CurrentUser.Id), member))
                     {
                         await ctx.Message.DeleteAsync();
                         if (userAlreadyBanned)
@@ -320,7 +319,8 @@ namespace Cliptok.Commands
         /// Sue me, I beg you.
         [Command("bankeeptextcmd")]
         [TextAlias("bankeep", "bansave")]
-        [Description("Bans a user but keeps their messages around."), HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(permissions: DiscordPermission.BanMembers)]
+        [Description("Bans a user but keeps their messages around.")]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(permissions: DiscordPermission.BanMembers)]
         [AllowedProcessors(typeof(TextCommandProcessor))]
         public async Task BankeepCmd(TextCommandContext ctx,
         [Description("The user you wish to ban. Should be a mention or ID.")] DiscordUser targetMember,
@@ -389,7 +389,7 @@ namespace Cliptok.Commands
             DiscordMember member;
             try
             {
-                member = await ctx.Guild.GetMemberAsync(targetMember.Id);
+                member = await ctx.Guild.CheckAndGetMemberAsync(targetMember.Id);
             }
             catch
             {
@@ -413,7 +413,7 @@ namespace Cliptok.Commands
             {
                 if (DiscordHelpers.AllowedToMod(ctx.Member, member))
                 {
-                    if (DiscordHelpers.AllowedToMod(await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id), member))
+                    if (DiscordHelpers.AllowedToMod(await ctx.Guild.CheckAndGetMemberAsync(ctx.Client.CurrentUser.Id), member))
                     {
                         await ctx.Message.DeleteAsync();
                         if (userAlreadyBanned)
@@ -443,7 +443,7 @@ namespace Cliptok.Commands
         [Command("editbantextcmd")]
         [TextAlias("editban")]
         [Description("Edit the details of a ban. Updates the DM to the user, among other things.")]
-        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(permissions: DiscordPermission.BanMembers)]
         [AllowedProcessors(typeof(TextCommandProcessor))]
         public async Task EditBanCmd(TextCommandContext ctx,
             [Description("The user you wish to edit the ban of. Accepts many formats")] DiscordUser targetUser,

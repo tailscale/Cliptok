@@ -23,12 +23,11 @@
             public string User { get; set; }
         }
 
-        [Command("listupdatetextcmd")]
-        [TextAlias("listupdate")]
+        [Command("listupdate")]
         [Description("Updates the private lists from the GitHub repository, then reloads them into memory.")]
-        [AllowedProcessors(typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.Moderator)]
-        public async Task ListUpdate(TextCommandContext ctx)
+        [AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor))]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
+        public async Task ListUpdate(CommandContext ctx)
         {
             if (Program.cfgjson.GitListDirectory is null || Program.cfgjson.GitListDirectory == "")
             {
@@ -56,13 +55,12 @@
 
         }
 
-        [Command("listaddtextcmd")]
-        [TextAlias("listadd")]
+        [Command("listadd")]
         [Description("Add a piece of text to a public list.")]
-        [AllowedProcessors(typeof(TextCommandProcessor))]
-        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator)]
+        [AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor))]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task ListAdd(
-            TextCommandContext ctx,
+            CommandContext ctx,
             [Description("The filename of the public list to add to. For example scams.txt")] string fileName,
             [RemainingText, Description("The text to add the list. Can be in a codeblock and across multiple line.")] string content
         )
@@ -85,7 +83,9 @@
                 return;
             }
 
-            await DiscordHelpers.SafeTyping(ctx.Channel);
+            await ctx.DeferResponseAsync();
+            if (ctx is TextCommandContext)
+                await DiscordHelpers.SafeTyping(ctx.Channel);
 
             if (content[..3] == "```")
                 content = content.Replace("```", "").Trim();
@@ -158,7 +158,7 @@
         [Command("scamcheck")]
         [Description("Check if a link or message is known to the anti-phishing API.")]
         [AllowedProcessors(typeof(SlashCommandProcessor), typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task ScamCheck(CommandContext ctx, [Parameter("input"), Description("Domain or message content to scan.")] string content)
         {
             var urlMatches = Constants.RegexConstants.domain_rx.Matches(content);
@@ -176,7 +176,8 @@
                     responseToSend = $"No valid match found.\nHTTP Status `{(int)httpStatus}`, result:\n";
                 }
 
-                responseToSend += await StringHelpers.CodeOrHasteBinAsync(responseText, "json");
+                var (_, text) = await StringHelpers.CodeOrHasteBinAsync(responseText, "json");
+                responseToSend += text;
 
                 await ctx.RespondAsync(responseToSend);
             }
@@ -189,7 +190,7 @@
         [Command("invitecheck")]
         [Description("Check if a server invite is known to the malicious invites API.")]
         [AllowedProcessors(typeof(SlashCommandProcessor), typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task InviteCheck(CommandContext ctx, [Parameter("input"), Description("Server invite to scan.")] string content)
         {
             var inviteMatches = Constants.RegexConstants.invite_rx.Matches(content);
@@ -224,18 +225,19 @@
                 responseToSend = $"No valid match found.\nHTTP Status `{(int)httpStatus}`, result:\n";
             }
 
-            responseToSend += await StringHelpers.CodeOrHasteBinAsync(responseString, "json");
+            var (_, text) = await StringHelpers.CodeOrHasteBinAsync(responseString, "json");
+            responseToSend += text;
 
             await ctx.RespondAsync(responseToSend);
         }
 
-        [Command("appealblocktextcmd")]
-        [TextAlias("appealblock", "superduperban", "ablock")]
+        [Command("appealblock")]
+        [TextAlias("superduperban", "ablock")]
         [Description("Prevents a user from submitting ban appeals.")]
-        [AllowedProcessors(typeof(TextCommandProcessor))]
-        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
+        [AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor))]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(userPermissions: [DiscordPermission.BanMembers], botPermissions: [])]
         public async Task AppealBlock(
-            TextCommandContext ctx,
+            CommandContext ctx,
             [Description("The user to block from ban appeals.")] DiscordUser user
         )
         {

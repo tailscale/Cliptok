@@ -9,8 +9,7 @@ namespace Cliptok.Commands
         [Command("announcebuild")]
         [Description("Announce a Windows Insider build in the current channel.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator)]
-        [RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task AnnounceBuildSlashCommand(SlashCommandContext ctx,
             [Parameter("build_number"), Description("Windows 11 build number, including decimals (Decimals are optional). Do not include the word Build.")] string buildNumber,
 
@@ -182,16 +181,16 @@ namespace Cliptok.Commands
                     pingMsgString += "\n\nDiscuss it in the thread below:";
                 }
 
-                await insiderRole1.ModifyAsync(mentionable: true);
+                await insiderRole1.ModifyAsync(mentionable: true, reason: "Making role mentionable for Insider build announcement.");
                 if (insiderChannel2 != default)
-                    await insiderRole2.ModifyAsync(mentionable: true);
+                    await insiderRole2.ModifyAsync(mentionable: true, reason: "Making role mentionable for Insider build announcement.");
 
                 await ctx.RespondAsync(pingMsgString);
                 messageSent = await ctx.GetResponseAsync();
 
-                await insiderRole1.ModifyAsync(mentionable: false);
+                await insiderRole1.ModifyAsync(mentionable: false, reason: "Restoring role state after Insider build announcement.");
                 if (insiderChannel2 != default)
-                    await insiderRole2.ModifyAsync(mentionable: false);
+                    await insiderRole2.ModifyAsync(mentionable: false, reason: "Restoring role state after Insider build announcement.");
             }
             else
             {
@@ -260,7 +259,7 @@ namespace Cliptok.Commands
                 threadChannel = await messageSent.CreateThreadAsync(threadName, DiscordAutoArchiveDuration.Week, "Creating thread for Insider build.");
 
                 var initialMsg = await threadChannel.SendMessageAsync($"{blogLink}");
-                await initialMsg.PinAsync();
+                await initialMsg.PinAsync(reason: "Pinning Insider build in thread.");
             }
 
             if (Program.cfgjson.InsiderAnnouncementChannel != 0)
@@ -270,15 +269,15 @@ namespace Cliptok.Commands
                     pingMsgString += $" & {threadChannel2.Mention}";
 
                 var announcementChannel = await ctx.Client.GetChannelAsync(Program.cfgjson.InsiderAnnouncementChannel);
-                await insiderRole1.ModifyAsync(mentionable: true);
+                await insiderRole1.ModifyAsync(mentionable: true, reason: "Making role mentionable for Insider build announcement.");
                 if (insiderChannel2 != default)
-                    await insiderRole2.ModifyAsync(mentionable: true);
+                    await insiderRole2.ModifyAsync(mentionable: true, reason: "Making role mentionable for Insider build announcement.");
 
                 var msg = await announcementChannel.SendMessageAsync(pingMsgString);
 
-                await insiderRole1.ModifyAsync(mentionable: false);
+                await insiderRole1.ModifyAsync(mentionable: false, reason: "Restoring role state after Insider build announcement.");
                 if (insiderChannel2 != default)
-                    await insiderRole2.ModifyAsync(mentionable: false);
+                    await insiderRole2.ModifyAsync(mentionable: false, reason: "Restoring role state after Insider build announcement.");
 
                 if (announcementChannel.Type is DiscordChannelType.News)
                     await announcementChannel.CrosspostMessageAsync(msg);
@@ -311,7 +310,7 @@ namespace Cliptok.Commands
         [Command("editannounce")]
         [Description("Edit an announcement, preserving the ping highlight.")]
         [AllowedProcessors(typeof(SlashCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.Moderator)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task EditAnnounce(
             SlashCommandContext ctx,
             [Parameter("message"), Description("The ID of the message to edit.")] string messageId,
@@ -358,7 +357,7 @@ namespace Cliptok.Commands
 
         [Command("announce")]
         [Description("Announces something in the current channel, pinging an Insider role in the process.")]
-        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task AnounceSlashCmd(SlashCommandContext ctx,
             [SlashAutoCompleteProvider(typeof(Providers.RolesAutocompleteProvider))]
             [Parameter("role1"), Description("The first Insider role to ping.")] string role1,
@@ -400,9 +399,9 @@ namespace Cliptok.Commands
             DiscordRole insiderRole1 = await ctx.Guild.GetRoleAsync(insiderChannel1);
             DiscordRole insiderRole2 = insiderChannel2 == default ? default : await ctx.Guild.GetRoleAsync(insiderChannel2);
 
-            await insiderRole1.ModifyAsync(mentionable: true);
+            await insiderRole1.ModifyAsync(mentionable: true, reason: "Making role mentionable for Insider announcement.");
             if (insiderRole2 != default)
-                await insiderRole2.ModifyAsync(mentionable: true);
+                await insiderRole2.ModifyAsync(mentionable: true, reason: "Making role mentionable for Insider announcement.");
 
             try
             {
@@ -417,9 +416,9 @@ namespace Cliptok.Commands
                 // We still need to remember to make it unmentionable even if the msg fails.
             }
 
-            await insiderRole1.ModifyAsync(mentionable: false);
+            await insiderRole1.ModifyAsync(mentionable: false, reason: "Restoring role state after Insider announcement.");
             if (insiderRole2 != default)
-                await insiderRole2.ModifyAsync(mentionable: false);
+                await insiderRole2.ModifyAsync(mentionable: false, reason: "Restoring role state after Insider announcement.");
 
             await ctx.RespondAsync($"{Program.cfgjson.Emoji.Success} Announcement sent successfully!");
         }

@@ -40,9 +40,9 @@ namespace Cliptok.Events
                 // If this is a command with subcommands, we are looking at the default subcommand if there is one;
                 // if the user did not explicitly specify a subcommand however, we should show help for the [group] command, not the default subcommand
                 if (e.Context.As<TextCommandContext>().Message.Content.Contains(' '))
-                    await Commands.GlobalCmds.Help(e.Context, e.Context.Command.FullName);
+                    await Commands.HelpCmds.Help(e.Context, e.Context.Command.FullName);
                 else
-                    await Commands.GlobalCmds.Help(e.Context, e.Context.Command.FullName.Split(' ').First());
+                    await Commands.HelpCmds.Help(e.Context, e.Context.Command.FullName.Split(' ').First());
                 return;
             }
 
@@ -50,7 +50,7 @@ namespace Cliptok.Events
             if (commandName == "edit" || commandName.Contains("timestamp"))
                 return;
 
-            e.Context.Client.Logger.LogError(CliptokEventID, e.Exception, "Exception occurred during {user}s invocation of {command}", e.Context.User.Username, commandName);
+            e.Context.Client.Logger.LogError(CliptokEventID, e.Exception, "Exception occurred during user {user}'s invocation of {command}", e.Context.User.Id, commandName);
 
             var exs = new List<Exception>();
             if (e.Exception is AggregateException ae)

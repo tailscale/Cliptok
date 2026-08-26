@@ -54,14 +54,14 @@ namespace Cliptok.Events
             if (cfgjson.ReactionEmoji is null)
                 return;
 
-            var member = await e.Guild.GetMemberAsync(e.User.Id);
+            var member = await e.Guild.CheckAndGetMemberAsync(e.User.Id);
             if (await GetPermLevelAsync(member) < ServerPermLevel.TrialModerator)
                 return;
 
             var recycleBinEmoji = await discord.GetApplicationEmojiAsync(cfgjson.ReactionEmoji.Delete);
 
             // Ignore reactions that are not the CliptokRecycleBin emoji!!
-            if (e.Emoji != recycleBinEmoji)
+            if (e.Emoji.Name != "CliptokRecycleBin" && e.Emoji.Name != "WindowsRecycleBin")
                 return;
 
             if (e.Channel.Id == cfgjson.LogChannels["mod"].ChannelId)
@@ -152,13 +152,11 @@ namespace Cliptok.Events
                     }
                     if (!foundMatch)
                     {
-                        await targetMessage.CreateReactionAsync(errorEmoji);
                         return;
                     }
                 }
                 else if (matchingWarnings.Count < 1)
                 {
-                    await targetMessage.CreateReactionAsync(errorEmoji);
                     return;
                 }
                 else

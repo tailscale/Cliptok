@@ -19,14 +19,7 @@
                     await LykosAvatarMethods.UserOrMemberAvatarURL(user, Program.homeGuild, "png")
                 );
 
-            try
-            {
-                member = await guild.GetMemberAsync(user.Id);
-            }
-            catch (DSharpPlus.Exceptions.NotFoundException)
-            {
-                // nothing
-            }
+            member = await guild.CheckAndGetMemberAsync(user.Id);
 
             if (await Program.redis.HashExistsAsync("mutes", user.Id))
             {
@@ -111,19 +104,11 @@
                 ? await guild.GetRoleAsync(Program.cfgjson.TqsMutedRole)
                 : await guild.GetRoleAsync(Program.cfgjson.MutedRole);
             DateTime? expireTime = actionTime + muteDuration;
-            DiscordMember moderator = await guild.GetMemberAsync(moderatorId);
+            DiscordMember moderator = await guild.CheckAndGetMemberAsync(moderatorId);
 
             (DiscordMessage? dmMessage, DiscordMessage? chatMessage) output = new();
 
-            DiscordMember naughtyMember = default;
-            try
-            {
-                naughtyMember = await guild.GetMemberAsync(naughtyUser.Id);
-            }
-            catch (DSharpPlus.Exceptions.NotFoundException)
-            {
-                // nothing
-            }
+            var naughtyMember = await guild.CheckAndGetMemberAsync(naughtyUser.Id);
 
             if (muteDuration == default)
             {
@@ -316,13 +301,20 @@
             await Program.redis.HashSetAsync("mutes", naughtyUser.Id, JsonConvert.SerializeObject(newMute));
             MostRecentMute = newMute;
             
-            // attempt to dehoist member if they aren't already dehoisted
-            if (naughtyMember is not null && naughtyMember.DisplayName[0] != DehoistHelpers.dehoistCharacter)
-                await naughtyMember.ModifyAsync(x =>
-                {
-                    x.Nickname = DehoistHelpers.DehoistName(naughtyMember.DisplayName);
-                    x.AuditLogReason = "[Automatic dehoist on mute]";
-                });
+            try
+            {
+                // attempt to dehoist member if they aren't already dehoisted
+                if (naughtyMember is not null && naughtyMember.DisplayName[0] != DehoistHelpers.dehoistCharacter)
+                    await naughtyMember.ModifyAsync(x =>
+                    {
+                        x.Nickname = DehoistHelpers.DehoistName(naughtyMember.DisplayName);
+                        x.AuditLogReason = "[Automatic dehoist on mute]";
+                    });
+            }
+            catch
+            {
+                // oh well
+            }
 
             return output;
         }
@@ -333,7 +325,9 @@
             {
                 // this should pull from cache most of the time!
                 var mutedRole = await targetGuild.GetRoleAsync(Program.cfgjson.MutedRole);
-                var member = await targetGuild.GetMemberAsync(targetUserId);
+                var member = await targetGuild.CheckAndGetMemberAsync(targetUserId);
+                if (member is null)
+                    return false;
                 await member.GrantRoleAsync(mutedRole, reason);
                 
                 MemberPunishment newMute = new()
@@ -362,7 +356,7 @@
             {
                 // this should pull from cache most of the time!
                 var mutedRole = await targetGuild.GetRoleAsync(Program.cfgjson.MutedRole);
-                var member = await targetGuild.GetMemberAsync(targetUserId);
+                var member = await targetGuild.CheckAndGetMemberAsync(targetUserId);
                 await member.RevokeRoleAsync(mutedRole, reason);
                 
                 await Program.redis.HashDeleteAsync("mutes", targetUserId);
@@ -392,15 +386,9 @@
             if (Program.cfgjson.TqsMutedRole != 0)
                 tqsMutedRole = await Program.homeGuild.GetRoleAsync(Program.cfgjson.TqsMutedRole);
 
-            DiscordMember member = default;
-            try
-            {
-                member = await guild.GetMemberAsync(targetUser.Id);
-            }
-            catch (DSharpPlus.Exceptions.NotFoundException ex)
-            {
-                Program.discord.Logger.LogWarning(eventId: Program.CliptokEventID, exception: ex, message: "Failed to unmute {user} in {servername} because they weren't in the server.", $"{DiscordHelpers.UniqueUsername(targetUser)}", guild.Name);
-            }
+            var member = await guild.CheckAndGetMemberAsync(targetUser.Id);
+            if (member is null)
+                Program.discord.Logger.LogWarning(eventId: Program.CliptokEventID, message: "Failed to unmute user {user} in {servername} because they weren't in the server.", targetUser.Id, guild.Name);
 
             if (member == default)
             {
@@ -524,12 +512,19 @@
                 var undehoistedNickname = member.Nickname[1..];
                 if (undehoistedNickname == member.GlobalName || (member.GlobalName is null && undehoistedNickname == member.Username))
                     undehoistedNickname = null;
-                
-                await member.ModifyAsync(x =>
+
+                try
                 {
-                    x.Nickname = undehoistedNickname;
-                    x.AuditLogReason = "[Automatic undehoist on unmute]";
-                });
+                    await member.ModifyAsync(x =>
+                    {
+                        x.Nickname = undehoistedNickname;
+                        x.AuditLogReason = "[Automatic undehoist on unmute]";
+                    });
+                }
+                catch
+                {
+                    // oh well
+                }
             }
 
             return true;

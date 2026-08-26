@@ -7,13 +7,13 @@ namespace Cliptok.Commands
         [Command("grant")]
         [Description("Grant a user access to the server, bypassing any verification requirements.")]
         [AllowedProcessors(typeof(SlashCommandProcessor), typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.TrialModerator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task Grant(CommandContext ctx, [Parameter("user"), Description("The user to grant server access to.")] DiscordUser user)
         {
             DiscordMember member = default;
             try
             {
-                member = await ctx.Guild.GetMemberAsync(user.Id);
+                member = await ctx.Guild.CheckAndGetMemberAsync(user.Id);
             }
             catch (Exception)
             {
@@ -21,7 +21,7 @@ namespace Cliptok.Commands
                 return;
             }
 
-            if (!DiscordHelpers.AllowedToMod(await ctx.Guild.GetMemberAsync(ctx.Client.CurrentUser.Id), member))
+            if (!DiscordHelpers.AllowedToMod(await ctx.Guild.CheckAndGetMemberAsync(ctx.Client.CurrentUser.Id), member))
             {
                 await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} I don't have permission to grant {member.Mention}! Check the role order.");
                 return;
@@ -42,13 +42,12 @@ namespace Cliptok.Commands
             await ctx.RespondAsync($"{Program.cfgjson.Emoji.Success} {member.Mention} can now access the server!");
         }
 
-        [Command("edittextcmd")]
-        [TextAlias("edit")]
+        [Command("edit")]
         [Description("Edit a message.")]
-        [AllowedProcessors(typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.Moderator)]
+        [AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor))]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task Edit(
-            TextCommandContext ctx,
+            CommandContext ctx,
             [Description("The ID of the message to edit.")] ulong messageId,
             [RemainingText, Description("New message content.")] string content
         )
@@ -58,18 +57,21 @@ namespace Cliptok.Commands
             if (msg is null || msg.Author.Id != ctx.Client.CurrentUser.Id)
                 return;
 
-            await ctx.Message.DeleteAsync();
+            if (ctx is TextCommandContext tctx)
+                await tctx.Message.DeleteAsync();
 
             await msg.ModifyAsync(content);
+
+            if (ctx is SlashCommandContext sctx)
+                await sctx.RespondAsync($"{Program.cfgjson.Emoji.Success} Message edited successfully!", ephemeral: true);
         }
 
-        [Command("editappendtextcmd")]
-        [TextAlias("editappend")]
+        [Command("editappend")]
         [Description("Append content to an existing bot message with a newline.")]
-        [AllowedProcessors(typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.Moderator)]
+        [AllowedProcessors(typeof(TextCommandProcessor), typeof(SlashCommandProcessor))]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task EditAppend(
-            TextCommandContext ctx,
+            CommandContext ctx,
             [Description("The ID of the message to edit")] ulong messageId,
             [RemainingText, Description("Content to append on the end of the message.")] string content
         )
@@ -82,19 +84,23 @@ namespace Cliptok.Commands
             var newContent = msg.Content + "\n" + content;
             if (newContent.Length > 2000)
             {
-                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} New content exceeded 2000 characters.");
+                await ctx.RespondAsync($"{Program.cfgjson.Emoji.Error} New content exceeded 2000 characters.", ephemeral: true);
             }
             else
             {
-                await ctx.Message.DeleteAsync();
+                if (ctx is TextCommandContext tctx)
+                    await tctx.Message.DeleteAsync();
                 await msg.ModifyAsync(newContent);
+
+                if (ctx is SlashCommandContext sctx)
+                    await sctx.RespondAsync($"{Program.cfgjson.Emoji.Success} Message edited successfully!", ephemeral: true);
             }
         }
 
         [Command("tellraw")]
         [Description("You know what you're here for.")]
         [AllowedProcessors(typeof(SlashCommandProcessor), typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task TellRaw(CommandContext ctx, [Parameter("channel"), Description("Either mention or ID. Not a name.")] string discordChannel, [Parameter("input"), Description("???")] string input, [Parameter("reply_msg_id"), Description("ID of message to use in a reply context.")] string replyID = "0", [Parameter("pingreply"), Description("Ping pong.")] bool pingreply = true)
         {
             if (ctx is SlashCommandContext)
@@ -152,7 +158,7 @@ namespace Cliptok.Commands
         [Command("bulklogs")]
         [Description("Query bulk msg logs for a given user.")]
         [AllowedProcessors(typeof(SlashCommandProcessor), typeof(TextCommandProcessor))]
-        [RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(DiscordPermission.ModerateMembers)]
+        [HomeServer, RequireHomeserverPerm(ServerPermLevel.Moderator), RequirePermissions(userPermissions: [DiscordPermission.ModerateMembers], botPermissions: [])]
         public async Task BulkLogsCmd(CommandContext ctx, [Parameter("user"), Description("The user you're looking for bulk logs containing")] DiscordUser user)
         {
             if (!Program.cfgjson.EnablePersistentDb)
@@ -261,7 +267,7 @@ namespace Cliptok.Commands
             // Try to DM the OP a link to their post so they can find it again
             try
             {
-                var member = await ctx.Guild.GetMemberAsync(channel.CreatorId);
+                var member = await ctx.Guild.CheckAndGetMemberAsync(channel.CreatorId);
                 await member.SendMessageAsync($"{Program.cfgjson.Emoji.Success} Your post **{channel.Name}** in <#{forum.Id}> has been marked as solved!\nIf you need to refer back to it, you can find it here: https://discord.com/channels/{channel.Guild.Id}/{channel.Id}");
             }
             catch
