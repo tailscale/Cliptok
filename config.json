@@ -234,8 +234,6 @@
   "autoWarnMsgAutoDeleteHours": 1,
   "compromisedAccountBanMsgAutoDeleteDays": 3,
   "logLevel": "Information",
-  "lokiURL": "",
-  "lokiServiceName": "",
   "voiceChannelPurge": true,
   "forumChannelAutoWarnFallbackChannel": 1379528470354198551,
   "rulesAllowedPublicChannels": [
